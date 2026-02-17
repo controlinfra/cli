@@ -1,6 +1,6 @@
 const chalk = require('chalk');
 const http = require('http');
-const open = require('open');
+const { execSync } = require('child_process');
 const inquirer = require('inquirer');
 const api = require('../api');
 const { auth } = api;
@@ -74,8 +74,15 @@ async function browserAuthFlow() {
       console.log(chalk.dim('  If browser does not open, visit:'));
       console.log(chalk.cyan(`  ${authUrl}\n`));
 
-      // Open browser
-      open(authUrl);
+      // Open browser using platform-native commands
+      try {
+        const platform = process.platform;
+        if (platform === 'darwin') execSync(`open "${authUrl}"`);
+        else if (platform === 'win32') execSync(`start "" "${authUrl}"`);
+        else execSync(`xdg-open "${authUrl}"`);
+      } catch (_e) {
+        // Browser open failed silently — URL is printed above
+      }
 
       console.log(chalk.dim('  Waiting for authentication...'));
       console.log(chalk.dim('  Press Ctrl+C to cancel\n'));
