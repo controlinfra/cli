@@ -79,14 +79,14 @@ download_binary() {
     DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${VERSION}/controlinfra-${PLATFORM}"
     TMP_FILE=$(mktemp)
 
-    echo -e "${CYAN}Downloading from: ${DOWNLOAD_URL}${NC}"
+    echo -e "${CYAN}Downloading from: ${DOWNLOAD_URL}${NC}" >&2
 
     if command -v curl &> /dev/null; then
         curl -fsSL "$DOWNLOAD_URL" -o "$TMP_FILE"
     elif command -v wget &> /dev/null; then
         wget -q "$DOWNLOAD_URL" -O "$TMP_FILE"
     else
-        echo -e "${RED}Error: curl or wget is required${NC}"
+        echo -e "${RED}Error: curl or wget is required${NC}" >&2
         exit 1
     fi
 
