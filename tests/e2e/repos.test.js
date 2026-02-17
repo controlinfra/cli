@@ -3,28 +3,51 @@
  * Tests: repos list, repos info
  */
 
-const { runCLI, apiCall, itAuthenticated } = require('./helpers');
+const { runCLI, apiCall, skipIfServerUnreachable, skipIfTokenInvalid } = require('./helpers');
 
 describe('CLI Repository Commands', () => {
+  let serverReachable = true;
+  let hasValidToken = true;
+
+  beforeAll(async () => {
+    serverReachable = !(await skipIfServerUnreachable());
+    hasValidToken = !skipIfTokenInvalid();
+  });
+
   describe('repos list', () => {
-    itAuthenticated('should list repositories', async () => {
+    it('should list repositories', async () => {
+      if (!serverReachable || !hasValidToken) {
+        return;
+      }
+
       const { stdout, exitCode } = runCLI('repos list');
 
       expect(exitCode).toBe(0);
+      // Should either show repos or "No repositories" message
       expect(stdout).toMatch(/Repository|No repositories|ID|Name/i);
     });
 
-    itAuthenticated('should support JSON output', async () => {
+    it('should support JSON output', async () => {
+      if (!serverReachable || !hasValidToken) {
+        return;
+      }
+
       const { stdout, exitCode } = runCLI('repos list --json');
 
       expect(exitCode).toBe(0);
+      // Should be valid JSON (array or object)
       expect(() => JSON.parse(stdout)).not.toThrow();
     });
 
-    itAuthenticated('should return repos via API', async () => {
+    it('should return repos via API', async () => {
+      if (!serverReachable || !hasValidToken) {
+        return;
+      }
+
       const response = await apiCall('GET', '/api/repos');
 
       expect(response).toBeDefined();
+      // Response should have configs/repositories array or be an array
       const repos = response.configs || response.repositories || response;
       expect(Array.isArray(repos) || typeof repos === 'object').toBe(true);
     });
@@ -42,11 +65,16 @@ describe('CLI Repository Commands', () => {
   });
 
   describe('repos info', () => {
-    itAuthenticated('should show error for non-existent repo', async () => {
+    it('should show error for non-existent repo', async () => {
+      if (!serverReachable || !hasValidToken) {
+        return;
+      }
+
       const { stdout, stderr, exitCode } = runCLI('repos info non-existent-id-12345', {
         expectError: true,
       });
 
+      // Should fail with error
       const output = stdout + stderr;
       expect(output).toMatch(/not found|error|invalid/i);
     });

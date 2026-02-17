@@ -3,26 +3,7 @@
  * Configures the CLI to use stage server for E2E tests
  */
 
-const path = require('path');
-const fs = require('fs');
 const Conf = require('conf');
-
-// Load .env.test if it exists and env vars aren't already set
-const envTestPath = path.join(__dirname, '..', '.env.test');
-if (fs.existsSync(envTestPath)) {
-  const lines = fs.readFileSync(envTestPath, 'utf8').split('\n');
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const eqIndex = trimmed.indexOf('=');
-    if (eqIndex === -1) continue;
-    const key = trimmed.slice(0, eqIndex);
-    const value = trimmed.slice(eqIndex + 1);
-    if (!process.env[key]) {
-      process.env[key] = value;
-    }
-  }
-}
 
 // Stage server configuration
 const STAGE_API_URL = process.env.CONTROLINFRA_API_URL || 'https://api-market-stage.controlinfra.com';

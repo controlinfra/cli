@@ -11,7 +11,7 @@ const config = new Conf({
   schema: {
     apiUrl: {
       type: 'string',
-      default: 'https://api.controlinfra.com',
+      default: 'https://www.controlinfra.com',
     },
     token: {
       type: 'string',
@@ -44,15 +44,7 @@ const config = new Conf({
  * Get the API base URL
  */
 function getApiUrl() {
-  if (process.env.CONTROLINFRA_API_URL) return process.env.CONTROLINFRA_API_URL;
-
-  const stored = config.get('apiUrl');
-  // Migrate stale default: www.controlinfra.com is the marketing site, not the API
-  if (stored === 'https://www.controlinfra.com') {
-    config.set('apiUrl', 'https://api.controlinfra.com');
-    return 'https://api.controlinfra.com';
-  }
-  return stored;
+  return process.env.CONTROLINFRA_API_URL || config.get('apiUrl');
 }
 
 /**

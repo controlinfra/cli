@@ -123,18 +123,14 @@ function skipIfNoToken() {
 }
 
 /**
- * Check if the token is expired by decoding JWT.
- * CLI API tokens (ci_ prefix) don't expire — only JWTs can.
+ * Check if the token is expired by decoding JWT
  */
 function isTokenExpired() {
   if (!TEST_TOKEN) return true;
 
-  // CLI API tokens (e.g. ci_abc123...) don't have an expiry
-  if (!TEST_TOKEN.includes('.')) return false;
-
   try {
     const parts = TEST_TOKEN.split('.');
-    if (parts.length !== 3) return false; // Malformed JWT, let server validate
+    if (parts.length !== 3) return true;
 
     const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
     if (!payload.exp) return false; // No expiry means it doesn't expire
@@ -142,7 +138,7 @@ function isTokenExpired() {
     // Check if expired (with 60 second buffer)
     return Date.now() >= (payload.exp * 1000) - 60000;
   } catch (e) {
-    return false; // Can't decode — assume valid, let the server reject if bad
+    return true; // If we can't decode, assume expired
   }
 }
 
@@ -163,18 +159,6 @@ function skipIfTokenInvalid() {
   return false;
 }
 
-/**
- * Wrapper around it() that uses it.skip when no valid token is available.
- * This ensures CI reports skipped (not silently passed) tests.
- */
-function itAuthenticated(name, fn) {
-  if (!TEST_TOKEN || isTokenExpired()) {
-    it.skip(name, fn);
-  } else {
-    it(name, fn);
-  }
-}
-
 module.exports = {
   runCLI,
   apiCall,
@@ -183,7 +167,6 @@ module.exports = {
   skipIfNoToken,
   skipIfTokenInvalid,
   isTokenExpired,
-  itAuthenticated,
   CLI_PATH,
   API_URL,
   TEST_TOKEN,

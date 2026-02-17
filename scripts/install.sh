@@ -81,21 +81,13 @@ download_binary() {
 
     echo -e "${CYAN}Downloading from: ${DOWNLOAD_URL}${NC}" >&2
 
-    local download_exit=0
     if command -v curl &> /dev/null; then
-        curl -fsSL "$DOWNLOAD_URL" -o "$TMP_FILE" || download_exit=$?
+        curl -fsSL "$DOWNLOAD_URL" -o "$TMP_FILE"
     elif command -v wget &> /dev/null; then
-        wget -q "$DOWNLOAD_URL" -O "$TMP_FILE" || download_exit=$?
+        wget -q "$DOWNLOAD_URL" -O "$TMP_FILE"
     else
         echo -e "${RED}Error: curl or wget is required${NC}" >&2
-        rm -f "$TMP_FILE"
-        return 1
-    fi
-
-    if [ "$download_exit" -ne 0 ] || [ ! -s "$TMP_FILE" ]; then
-        echo -e "${RED}Binary download failed (exit code: ${download_exit})${NC}" >&2
-        rm -f "$TMP_FILE"
-        return 1
+        exit 1
     fi
 
     echo "$TMP_FILE"
@@ -111,11 +103,7 @@ install_binary() {
         chmod +x "${INSTALL_DIR}/${BINARY_NAME}"
     else
         echo -e "${YELLOW}Installing to ${INSTALL_DIR} requires sudo access${NC}"
-        if ! sudo mv "$TMP_FILE" "${INSTALL_DIR}/${BINARY_NAME}"; then
-            echo -e "${RED}Failed to install binary to ${INSTALL_DIR}. Try running with sudo.${NC}"
-            rm -f "$TMP_FILE"
-            return 1
-        fi
+        sudo mv "$TMP_FILE" "${INSTALL_DIR}/${BINARY_NAME}"
         sudo chmod +x "${INSTALL_DIR}/${BINARY_NAME}"
     fi
 }
@@ -137,33 +125,38 @@ verify_installation() {
     fi
 }
 
+# Alternative: npm install
+install_via_npm() {
+    echo -e "${YELLOW}Installing via npm...${NC}"
+
+    if command -v npm &> /dev/null; then
+        npm install -g @controlinfra/cli
+        verify_installation
+    else
+        echo -e "${RED}npm not found. Please install Node.js or download the binary manually.${NC}"
+        echo -e "Download from: https://github.com/${REPO}/releases"
+        exit 1
+    fi
+}
+
 # Main installation flow
 main() {
     detect_platform
     get_latest_version
 
-    if [ -z "$VERSION" ]; then
-        echo -e "${RED}No releases found. Please check https://github.com/${REPO}/releases${NC}"
-        exit 1
-    fi
-
     echo ""
     echo -e "${CYAN}Installing controlinfra CLI...${NC}"
 
-    TMP_FILE=""
-    if ! TMP_FILE=$(download_binary); then
-        echo -e "${RED}Installation failed. Download the binary manually from:${NC}"
-        echo -e "  https://github.com/${REPO}/releases"
-        exit 1
+    # If a release exists, try binary download first; otherwise go straight to npm
+    if [ -n "$VERSION" ]; then
+        TMP_FILE=$(download_binary 2>/dev/null) || install_via_npm
+        if [ -n "$TMP_FILE" ] && [ -f "$TMP_FILE" ]; then
+            install_binary "$TMP_FILE"
+            verify_installation
+        fi
+    else
+        install_via_npm
     fi
-
-    if ! install_binary "$TMP_FILE"; then
-        echo -e "${RED}Installation failed. Try running the script with sudo:${NC}"
-        echo -e "  curl -fsSL https://controlinfra.com/cli/install.sh | sudo bash"
-        exit 1
-    fi
-
-    verify_installation
 }
 
 main

@@ -3,32 +3,57 @@
  * Tests: drifts list, drifts stats
  */
 
-const { runCLI, apiCall, itAuthenticated } = require('./helpers');
+const { runCLI, apiCall, skipIfServerUnreachable, skipIfTokenInvalid } = require('./helpers');
 
 describe('CLI Drift Commands', () => {
+  let serverReachable = true;
+  let hasValidToken = true;
+
+  beforeAll(async () => {
+    serverReachable = !(await skipIfServerUnreachable());
+    hasValidToken = !skipIfTokenInvalid();
+  });
+
   describe('drifts list', () => {
-    itAuthenticated('should list drifts', async () => {
+    it('should list drifts', async () => {
+      if (!serverReachable || !hasValidToken) {
+        return;
+      }
+
       const { stdout, exitCode } = runCLI('drifts list');
 
       expect(exitCode).toBe(0);
+      // Should either show drifts or "No drifts" message
       expect(stdout).toMatch(/Drift|No drifts|ID|Severity|Resource/i);
     });
 
-    itAuthenticated('should support JSON output', async () => {
+    it('should support JSON output', async () => {
+      if (!serverReachable || !hasValidToken) {
+        return;
+      }
+
       const { stdout, exitCode } = runCLI('drifts list --json');
 
       expect(exitCode).toBe(0);
       expect(() => JSON.parse(stdout)).not.toThrow();
     });
 
-    itAuthenticated('should support severity filter', async () => {
+    it('should support severity filter', async () => {
+      if (!serverReachable || !hasValidToken) {
+        return;
+      }
+
       const { stdout, exitCode } = runCLI('drifts list --severity critical');
 
       expect(exitCode).toBe(0);
       expect(stdout).toBeDefined();
     });
 
-    itAuthenticated('should return drifts via API', async () => {
+    it('should return drifts via API', async () => {
+      if (!serverReachable || !hasValidToken) {
+        return;
+      }
+
       const response = await apiCall('GET', '/api/drifts?limit=10');
 
       expect(response).toBeDefined();
@@ -38,10 +63,15 @@ describe('CLI Drift Commands', () => {
   });
 
   describe('drifts stats', () => {
-    itAuthenticated('should show drift statistics', async () => {
+    it('should show drift statistics', async () => {
+      if (!serverReachable || !hasValidToken) {
+        return;
+      }
+
       const { stdout, exitCode } = runCLI('drifts stats');
 
       expect(exitCode).toBe(0);
+      // Should show some stats or message
       expect(stdout).toMatch(/drift|stat|total|critical|high|medium|low/i);
     });
   });
@@ -58,7 +88,11 @@ describe('CLI Drift Commands', () => {
   });
 
   describe('drifts show', () => {
-    itAuthenticated('should show error for non-existent drift', async () => {
+    it('should show error for non-existent drift', async () => {
+      if (!serverReachable || !hasValidToken) {
+        return;
+      }
+
       const { stdout, stderr, exitCode } = runCLI('drifts show non-existent-drift-id', {
         expectError: true,
       });

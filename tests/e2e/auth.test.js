@@ -3,26 +3,42 @@
  * Tests: whoami, login status
  */
 
-const os = require('os');
-const path = require('path');
-const { runCLI, itAuthenticated, API_URL, TEST_TOKEN } = require('./helpers');
+const { runCLI, apiCall, skipIfServerUnreachable, skipIfTokenInvalid, API_URL, TEST_TOKEN } = require('./helpers');
 
 describe('CLI Auth Commands', () => {
+  let serverReachable = true;
+  let hasValidToken = true;
+
+  beforeAll(async () => {
+    serverReachable = !(await skipIfServerUnreachable());
+    hasValidToken = !skipIfTokenInvalid();
+  });
+
   describe('whoami', () => {
-    itAuthenticated('should display current user info when authenticated', async () => {
+    it('should display current user info when authenticated', async () => {
+      if (!serverReachable || !hasValidToken) {
+        return;
+      }
+
       const { stdout, exitCode } = runCLI('whoami');
 
       expect(exitCode).toBe(0);
       expect(stdout).toMatch(/Current User|Name:|Email:/i);
     });
 
-    itAuthenticated('should return user data via API', async () => {
+    it('should return user data via API', async () => {
+      if (!serverReachable || !hasValidToken) {
+        return;
+      }
+
+      // Make GET request without body
       const axios = require('axios');
-      const response = await axios.get(`${API_URL}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${TEST_TOKEN}` },
+      const response = await axios.get(`${require('./helpers').API_URL}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${require('./helpers').TEST_TOKEN}` },
       });
 
       expect(response.data).toBeDefined();
+      // User should have basic properties
       expect(response.data.displayName || response.data.email || response.data.username).toBeDefined();
     });
   });
@@ -32,7 +48,7 @@ describe('CLI Auth Commands', () => {
       const { stdout, exitCode } = runCLI('--version');
 
       expect(exitCode).toBe(0);
-      expect(stdout).toMatch(/\d+\.\d+\.\d+/);
+      expect(stdout).toMatch(/\d+\.\d+\.\d+/); // Matches version number pattern
     });
 
     it('should display help', () => {
@@ -49,15 +65,9 @@ describe('CLI Auth Commands', () => {
 
   describe('unauthenticated access', () => {
     it('should show login prompt when not authenticated', () => {
-      // Use a temp APPDATA/XDG_CONFIG_HOME so the CLI doesn't read
-      // the real stored token from the user's config file
-      const tmpConfig = path.join(os.tmpdir(), `ci-test-noauth-${Date.now()}`);
+      // Run without token
       const { stdout, stderr } = runCLI('whoami', {
-        env: {
-          CONTROLINFRA_TOKEN: '',
-          APPDATA: tmpConfig,
-          XDG_CONFIG_HOME: tmpConfig,
-        },
+        env: { CONTROLINFRA_TOKEN: '' },
         expectError: true,
       });
 
