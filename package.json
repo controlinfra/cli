@@ -1,0 +1,65 @@
+{
+  "name": "@controlinfra/cli",
+  "version": "0.1.0",
+  "description": "CLI for Controlinfra - Infrastructure Drift Detection",
+  "main": "src/index.js",
+  "bin": {
+    "controlinfra": "./bin/controlinfra.js"
+  },
+  "scripts": {
+    "start": "node bin/controlinfra.js",
+    "dev": "node bin/controlinfra.js",
+    "lint": "eslint src --ext .js",
+    "test": "jest --testPathPattern=tests/unit",
+    "test:e2e": "jest --testPathPattern=tests/e2e --runInBand",
+    "test:all": "jest --runInBand",
+    "build": "npm run build:linux && npm run build:macos && npm run build:windows",
+    "build:linux": "pkg . --targets node18-linux-x64 --output dist/controlinfra-linux",
+    "build:linux-arm": "pkg . --targets node18-linux-arm64 --output dist/controlinfra-linux-arm64",
+    "build:macos": "pkg . --targets node18-macos-x64 --output dist/controlinfra-macos",
+    "build:macos-arm": "pkg . --targets node18-macos-arm64 --output dist/controlinfra-macos-arm64",
+    "build:windows": "pkg . --targets node18-win-x64 --output dist/controlinfra-win.exe",
+    "build:all": "npm run build && npm run build:linux-arm && npm run build:macos-arm"
+  },
+  "pkg": {
+    "scripts": "src/**/*.js",
+    "assets": [],
+    "targets": [
+      "node18-linux-x64",
+      "node18-macos-x64",
+      "node18-win-x64"
+    ],
+    "outputPath": "dist"
+  },
+  "keywords": [
+    "terraform",
+    "drift",
+    "infrastructure",
+    "devops",
+    "cli"
+  ],
+  "author": "Controlinfra",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "chalk": "^4.1.2",
+    "commander": "^11.1.0",
+    "conf": "^10.2.0",
+    "inquirer": "^8.2.6",
+    "open": "^8.4.2",
+    "ora": "^5.4.1",
+    "cli-table3": "^0.6.3"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "pkg": "^5.8.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/controlinfra/cli"
+  }
+}
