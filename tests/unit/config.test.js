@@ -1,5 +1,8 @@
 'use strict';
 
+const os = require('os');
+const path = require('path');
+const fs = require('fs');
 const { getDriftGateDefaults } = require('../../src/config');
 
 describe('getDriftGateDefaults', () => {
@@ -108,5 +111,69 @@ describe('getDriftGateDefaults', () => {
       failOnSeverity: 'critical',
       failOnNewOnly: true,
     });
+  });
+});
+
+describe('getApiUrl', () => {
+  const originalEnv = process.env;
+  let tmpDir;
+
+  beforeEach(() => {
+    jest.resetModules();
+    process.env = { ...originalEnv };
+    delete process.env.CONTROLINFRA_API_URL;
+    // Use a temp directory so tests don't touch the real config
+    tmpDir = path.join(os.tmpdir(), `ci-config-test-${Date.now()}`);
+    fs.mkdirSync(tmpDir, { recursive: true });
+    process.env.XDG_CONFIG_HOME = tmpDir;
+    process.env.APPDATA = tmpDir;
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+    // Clean up temp config
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* ignore */ }
+  });
+
+  it('should return env var when CONTROLINFRA_API_URL is set', () => {
+    process.env.CONTROLINFRA_API_URL = 'https://custom.example.com';
+    const { getApiUrl } = require('../../src/config');
+
+    expect(getApiUrl()).toBe('https://custom.example.com');
+  });
+
+  it('should return default api.controlinfra.com for fresh installs', () => {
+    const { getApiUrl } = require('../../src/config');
+
+    expect(getApiUrl()).toBe('https://api.controlinfra.com');
+  });
+
+  it('should migrate stale www.controlinfra.com to api.controlinfra.com', () => {
+    // Simulate a config file with the old default
+    const { config, getApiUrl } = require('../../src/config');
+    config.set('apiUrl', 'https://www.controlinfra.com');
+
+    const url = getApiUrl();
+
+    expect(url).toBe('https://api.controlinfra.com');
+    // Verify it was persisted
+    expect(config.get('apiUrl')).toBe('https://api.controlinfra.com');
+  });
+
+  it('should not migrate a custom API URL', () => {
+    const { config, getApiUrl } = require('../../src/config');
+    config.set('apiUrl', 'https://self-hosted.example.com');
+
+    expect(getApiUrl()).toBe('https://self-hosted.example.com');
+  });
+
+  it('should prefer env var over stored config (no migration applied)', () => {
+    process.env.CONTROLINFRA_API_URL = 'https://override.example.com';
+    const { config, getApiUrl } = require('../../src/config');
+    config.set('apiUrl', 'https://www.controlinfra.com');
+
+    expect(getApiUrl()).toBe('https://override.example.com');
+    // Stale value should NOT be migrated when env var takes precedence
+    expect(config.get('apiUrl')).toBe('https://www.controlinfra.com');
   });
 });
