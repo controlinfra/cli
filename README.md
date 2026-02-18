@@ -213,7 +213,7 @@ controlinfra drifts stats                  # Show statistics
 
 ```bash
 controlinfra runners list                  # List runners
-controlinfra runners add --name prod-01    # Create runner
+controlinfra runners add prod-01           # Create runner
 controlinfra runners setup <id>            # Get install script
 controlinfra runners status <id>           # Check status
 controlinfra runners remove <id>           # Delete runner
