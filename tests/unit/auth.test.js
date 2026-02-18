@@ -49,7 +49,7 @@ const { login, logout, whoami } = require('../../src/commands/auth');
 
 // Silence console.log noise from showDashboard, whoami, etc.
 beforeAll(() => { jest.spyOn(console, 'log').mockImplementation(() => {}); });
-afterAll(() => { console.log.mockRestore(); });
+afterAll(() => { console.log.mockRestore(); mockExit.mockRestore(); });
 
 // Prevent process.exit from killing the test runner
 const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
