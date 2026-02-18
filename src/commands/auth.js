@@ -1,6 +1,6 @@
 const chalk = require('chalk');
 const http = require('http');
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 const inquirer = require('inquirer');
 const api = require('../api');
 const { auth } = api;
@@ -83,10 +83,11 @@ async function browserAuthFlow() {
       console.log(chalk.cyan(`  ${authUrl}\n`));
 
       // Open browser using native OS command (avoids 'open' npm dep for pkg builds)
-      const openCmd = process.platform === 'darwin' ? 'open'
-        : process.platform === 'win32' ? 'start ""'
-        : 'xdg-open';
-      exec(`${openCmd} "${authUrl}"`);
+      if (process.platform === 'win32') {
+        execFile('cmd', ['/c', 'start', '', authUrl]);
+      } else {
+        execFile(process.platform === 'darwin' ? 'open' : 'xdg-open', [authUrl]);
+      }
 
       console.log(chalk.dim('  Waiting for authentication...'));
       console.log(chalk.dim('  Press Ctrl+C to cancel\n'));
