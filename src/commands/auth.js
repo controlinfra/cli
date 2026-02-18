@@ -146,9 +146,17 @@ async function browserAuthFlow() {
  */
 async function manualTokenEntry() {
   const apiUrl = getApiUrl();
+  let settingsUrl;
+  if (apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')) {
+    settingsUrl = 'http://localhost:5173/settings';
+  } else if (apiUrl.includes('stage')) {
+    settingsUrl = 'https://stage.controlinfra.com/settings';
+  } else {
+    settingsUrl = 'https://controlinfra.com/settings';
+  }
 
   console.log(chalk.cyan('  To authenticate on this machine:\n'));
-  console.log(`  1. Go to ${chalk.cyan(`${apiUrl}/settings`)}`);
+  console.log(`  1. Go to ${chalk.cyan(settingsUrl)}`);
   console.log(`  2. Navigate to ${chalk.bold('Integrations')} > ${chalk.bold('CLI API Tokens')}`);
   console.log('  3. Create a new token and copy it\n');
   console.log(chalk.dim(`  Or run: ${chalk.yellow('controlinfra login --token <your-token>')}\n`));
