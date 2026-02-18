@@ -26,7 +26,7 @@ async function list(options) {
 
     if (runnerList.length === 0) {
       console.log(chalk.yellow('\nNo runners configured\n'));
-      console.log(chalk.dim('Create a runner with'), chalk.cyan('controlinfra runners add --name <name>\n'));
+      console.log(chalk.dim('Create a runner with'), chalk.cyan('controlinfra runners add <name>\n'));
       return;
     }
 
@@ -58,14 +58,15 @@ async function list(options) {
 /**
  * Create a new runner
  */
-async function add(options) {
+async function add(name, options) {
   requireAuth();
 
+  const runnerName = name || 'my-runner';
   const spinner = createSpinner('Creating runner...').start();
 
   try {
     const data = await runners.create({
-      name: options.name,
+      name: runnerName,
       labels: options.labels ? options.labels.split(',').map((l) => l.trim()) : [],
     });
 

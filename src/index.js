@@ -254,9 +254,8 @@ runners
   .action(runnerCommands.list);
 
 runners
-  .command('add')
+  .command('add [name]')
   .description('Create a new runner')
-  .option('--name <name>', 'Runner name', 'my-runner')
   .option('--labels <labels>', 'Comma-separated labels')
   .action(runnerCommands.add);
 
