@@ -42,9 +42,15 @@ jest.mock('../../src/commands/auth-html', () => ({
   getErrorHtml: jest.fn(() => '<html>error</html>'),
 }));
 
+jest.mock('inquirer', () => ({
+  prompt: jest.fn(),
+}));
+
 const api = require('../../src/api');
 const config = require('../../src/config');
 const output = require('../../src/output');
+const inquirer = require('inquirer');
+const { canOpenBrowser } = require('../../src/utils/browser-detect');
 const { login, logout, whoami } = require('../../src/commands/auth');
 
 // Silence console.log noise from showDashboard, whoami, etc.
@@ -161,5 +167,42 @@ describe('whoami', () => {
     await whoami();
 
     expect(output.outputError).toHaveBeenCalledWith('Token expired');
+  });
+});
+
+describe('login manual token entry - settings URL', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    canOpenBrowser.mockReturnValue(false);
+    // Simulate user providing a token via prompt
+    inquirer.prompt.mockResolvedValue({ token: 'test-token' });
+    api.auth.getMe.mockResolvedValue({ user: { displayName: 'Test' } });
+    api.repos.list.mockResolvedValue({ configs: [] });
+    api.scans.list.mockResolvedValue({ scans: [] });
+    api.drifts.list.mockResolvedValue({ drifts: [] });
+  });
+
+  it('should show production settings URL by default', async () => {
+    config.getApiUrl.mockReturnValue('https://api.controlinfra.com');
+    await login({});
+    expect(console.log).toHaveBeenCalledWith(
+      expect.stringContaining('https://controlinfra.com/settings'),
+    );
+  });
+
+  it('should show staging settings URL for stage API', async () => {
+    config.getApiUrl.mockReturnValue('https://api-stage.controlinfra.com');
+    await login({});
+    expect(console.log).toHaveBeenCalledWith(
+      expect.stringContaining('https://stage.controlinfra.com/settings'),
+    );
+  });
+
+  it('should show localhost settings URL for local dev', async () => {
+    config.getApiUrl.mockReturnValue('http://localhost:3000');
+    await login({});
+    expect(console.log).toHaveBeenCalledWith(
+      expect.stringContaining('http://localhost:5173/settings'),
+    );
   });
 });
