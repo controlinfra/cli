@@ -325,10 +325,9 @@ jobs:
 
 ```yaml
 drift-detection:
-  image: ubuntu:latest
+  image: curlimages/curl:latest
   script:
-    - apt-get update && apt-get install -y curl
-    - curl -fsSL https://controlinfra.com/cli/install.sh | bash
+    - curl -fsSL https://controlinfra.com/cli/install.sh | sh
     - controlinfra login --token $CONTROLINFRA_TOKEN
     - controlinfra scan run $CI_PROJECT_PATH --wait
     - controlinfra drifts list --json > drift-report.json
