@@ -1,5 +1,5 @@
 #!/bin/bash
-# Controlinfra CLI installer for Linux/macOS
+# Controlinfra CLI installer for Linux/macOS/Windows (Git Bash)
 # Usage: curl -fsSL https://controlinfra.com/cli/install.sh | bash
 
 set -e
@@ -35,9 +35,7 @@ detect_platform() {
             OS="macos"
             ;;
         CYGWIN*|MINGW*|MSYS*)
-            echo -e "${RED}For Windows, please use the PowerShell installer:${NC}"
-            echo "  iwr -useb https://controlinfra.com/install.ps1 | iex"
-            exit 1
+            OS="win"
             ;;
         *)
             echo -e "${RED}Unsupported operating system: $OS${NC}"
@@ -58,9 +56,15 @@ detect_platform() {
             ;;
     esac
 
-    PLATFORM="${OS}"
-    if [ "$ARCH" = "arm64" ]; then
-        PLATFORM="${OS}-arm64"
+    if [ "$OS" = "win" ]; then
+        PLATFORM="win.exe"
+        INSTALL_DIR="${LOCALAPPDATA:-${USERPROFILE:-$HOME}}/controlinfra"
+        BINARY_NAME="controlinfra.exe"
+    else
+        PLATFORM="${OS}"
+        if [ "$ARCH" = "arm64" ]; then
+            PLATFORM="${OS}-arm64"
+        fi
     fi
 
     echo -e "${GREEN}Detected platform: ${OS} (${ARCH})${NC}"
@@ -105,6 +109,9 @@ download_binary() {
 install_binary() {
     TMP_FILE=$1
 
+    # Create install directory if it doesn't exist
+    mkdir -p "$INSTALL_DIR" 2>/dev/null
+
     # Check if we need sudo
     if [ -w "$INSTALL_DIR" ]; then
         mv "$TMP_FILE" "${INSTALL_DIR}/${BINARY_NAME}"
@@ -118,12 +125,25 @@ install_binary() {
         fi
         sudo chmod +x "${INSTALL_DIR}/${BINARY_NAME}"
     fi
+
+    # Add to PATH on Windows
+    if [ "$OS" = "win" ] && command -v powershell.exe &> /dev/null; then
+        WIN_DIR=$(cygpath -w "$INSTALL_DIR" 2>/dev/null || echo "$INSTALL_DIR")
+        powershell.exe -NoProfile -Command "
+            \$p = [Environment]::GetEnvironmentVariable('Path', 'User')
+            if (\$p -notlike \"*$WIN_DIR*\") {
+                [Environment]::SetEnvironmentVariable('Path', \"\$p;$WIN_DIR\", 'User')
+            }
+        " 2>/dev/null
+        export PATH="$PATH:$INSTALL_DIR"
+        echo -e "${YELLOW}You may need to restart your terminal for PATH changes to take effect.${NC}"
+    fi
 }
 
 # Verify installation
 verify_installation() {
-    if command -v "$BINARY_NAME" &> /dev/null; then
-        INSTALLED_VERSION=$("$BINARY_NAME" --version 2>/dev/null || echo "unknown")
+    if command -v "$BINARY_NAME" &> /dev/null || [ -x "${INSTALL_DIR}/${BINARY_NAME}" ]; then
+        INSTALLED_VERSION=$("${INSTALL_DIR}/${BINARY_NAME}" --version 2>/dev/null || "$BINARY_NAME" --version 2>/dev/null || echo "unknown")
         echo ""
         echo -e "${GREEN}Successfully installed controlinfra ${INSTALLED_VERSION}${NC}"
         echo ""
