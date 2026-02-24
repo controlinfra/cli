@@ -35,14 +35,9 @@ async function list(options, command) {
     }
 
     let driftList = data.drifts || data.data || data || [];
-    // Ensure it's an array
-    if (!Array.isArray(driftList)) {
-      driftList = [];
-    }
+    if (!Array.isArray(driftList)) driftList = [];
     spinner.stop();
 
-    // Handle JSON output first (even for empty results)
-    // Navigate up: list -> drifts -> program to get global --json option
     const isJson = command?.parent?.parent?.opts()?.json;
     if (isJson) {
       console.log(JSON.stringify(driftList, null, 2));
@@ -104,7 +99,6 @@ async function show(driftId, options) {
       `Detected:    ${formatRelativeTime(drift.createdAt)}`,
     ].join('\n'));
 
-    // Show changes if available
     if (drift.changes && drift.changes.length > 0) {
       console.log(brand.purpleBold('\nChanges:'));
       console.log(chalk.dim('─'.repeat(60)));
@@ -115,14 +109,12 @@ async function show(driftId, options) {
       });
     }
 
-    // Show AI analysis if available
     if (drift.aiAnalysis) {
       console.log(brand.purpleBold('\nAI Analysis:'));
       console.log(chalk.dim('─'.repeat(60)));
       console.log(`  ${drift.aiAnalysis.summary || drift.aiAnalysis}`);
     }
 
-    // Show fix if available
     if (drift.fixCode) {
       console.log(brand.purpleBold('\nGenerated Fix:'));
       console.log(chalk.dim('─'.repeat(60)));
@@ -240,71 +232,6 @@ async function resolve(driftId, _options) {
   }
 }
 
-/**
- * Show drift statistics
- */
-async function stats(options) {
-  requireAuth();
-
-  const spinner = createSpinner('Fetching statistics...').start();
-
-  try {
-    let data;
-    if (options.repo) {
-      data = await drifts.getStatistics(options.repo);
-    } else {
-      // Get general stats from list
-      const allDrifts = await drifts.list({ limit: 1000 });
-      const driftList = allDrifts.drifts || allDrifts || [];
-
-      data = {
-        total: driftList.length,
-        bySeverity: {
-          critical: driftList.filter((d) => d.severity === 'critical').length,
-          high: driftList.filter((d) => d.severity === 'high').length,
-          medium: driftList.filter((d) => d.severity === 'medium').length,
-          low: driftList.filter((d) => d.severity === 'low').length,
-        },
-        byStatus: {
-          detected: driftList.filter((d) => d.status === 'detected').length,
-          analyzed: driftList.filter((d) => d.status === 'analyzed').length,
-          resolved: driftList.filter((d) => d.status === 'resolved').length,
-          ignored: driftList.filter((d) => d.status === 'ignored').length,
-        },
-      };
-    }
-
-    spinner.stop();
-
-    if (options?.parent?.parent?.opts()?.json) {
-      console.log(JSON.stringify(data, null, 2));
-      return;
-    }
-
-    console.log();
-    outputBox('Drift Statistics', [
-      `Total Drifts:   ${data.total || 0}`,
-      '',
-      brand.purpleBold('By Severity:'),
-      `  Critical:     ${chalk.red(data.bySeverity?.critical || 0)}`,
-      `  High:         ${chalk.yellow(data.bySeverity?.high || 0)}`,
-      `  Medium:       ${chalk.blue(data.bySeverity?.medium || 0)}`,
-      `  Low:          ${chalk.gray(data.bySeverity?.low || 0)}`,
-      '',
-      brand.purpleBold('By Status:'),
-      `  Detected:     ${data.byStatus?.detected || 0}`,
-      `  Analyzed:     ${data.byStatus?.analyzed || 0}`,
-      `  Resolved:     ${chalk.green(data.byStatus?.resolved || 0)}`,
-      `  Ignored:      ${chalk.gray(data.byStatus?.ignored || 0)}`,
-    ].join('\n'));
-    console.log();
-  } catch (error) {
-    spinner.fail('Failed to fetch statistics');
-    outputError(error.message);
-    process.exit(1);
-  }
-}
-
 module.exports = {
   list,
   show,
@@ -312,5 +239,4 @@ module.exports = {
   createPR,
   ignore,
   resolve,
-  stats,
 };

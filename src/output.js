@@ -3,14 +3,6 @@ const ora = require('ora');
 const Table = require('cli-table3');
 const { getOutputFormat, isQuiet } = require('./config');
 
-/**
- * Output utilities for CLI
- * Handles formatting output as tables, JSON, or plain text
- */
-
-// ─────────────────────────────────────────────────────────
-// Brand Colors
-// ─────────────────────────────────────────────────────────
 // Raw hex values — single source of truth for brand colors
 const brandHex = {
   purple: '#ac9fe0',
@@ -37,9 +29,6 @@ const brand = {
   ],
 };
 
-// ─────────────────────────────────────────────────────────
-// Spinners
-// ─────────────────────────────────────────────────────────
 function createSpinner(text) {
   return ora({
     text,
@@ -48,9 +37,6 @@ function createSpinner(text) {
   });
 }
 
-// ─────────────────────────────────────────────────────────
-// Status Colors
-// ─────────────────────────────────────────────────────────
 const statusColors = {
   // Scan statuses
   completed: chalk.green,
@@ -96,9 +82,6 @@ function colorStatus(status) {
   return colorFn(status);
 }
 
-// ─────────────────────────────────────────────────────────
-// Table Formatting
-// ─────────────────────────────────────────────────────────
 function createTable(headers, options = {}) {
   return new Table({
     head: headers.map((h) => brand.purpleBold(h)),
@@ -127,9 +110,6 @@ function createTable(headers, options = {}) {
   });
 }
 
-// ─────────────────────────────────────────────────────────
-// Output Functions
-// ─────────────────────────────────────────────────────────
 function output(data, options = {}) {
   const format = getOutputFormat(options);
 
@@ -186,9 +166,6 @@ function outputInfo(message, options = {}) {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Data Formatting Helpers
-// ─────────────────────────────────────────────────────────
 function formatDate(date) {
   if (!date) return '-';
   const d = new Date(date);
@@ -233,11 +210,6 @@ function truncate(str, length = 40) {
   return str.substring(0, length - 3) + '...';
 }
 
-// ─────────────────────────────────────────────────────────
-// Box/Card Output
-// ─────────────────────────────────────────────────────────
-
-// Strip ANSI escape codes to get visible string length
 function stripAnsi(str) {
   // eslint-disable-next-line no-control-regex
   return str.replace(/\x1b\[[0-9;]*m/g, '');
@@ -270,9 +242,6 @@ function outputBox(title, content) {
   console.log(brand.purple(`└${border}┘`));
 }
 
-// ─────────────────────────────────────────────────────────
-// Progress Indicator
-// ─────────────────────────────────────────────────────────
 function outputProgress(current, total, label = '') {
   const percentage = Math.round((current / total) * 100);
   const barWidth = 30;
