@@ -1,5 +1,5 @@
 # Controlinfra CLI installer for Windows
-# Usage: iwr -useb https://controlinfra.com/install.ps1 | iex
+# Usage: iwr -useb https://controlinfra.com/cli/install.ps1 | iex
 
 $ErrorActionPreference = "Stop"
 
@@ -69,24 +69,6 @@ function Install-Binary {
     return $targetPath
 }
 
-function Install-ViaNpm {
-    Write-Host "Trying npm install as fallback..." -ForegroundColor Yellow
-
-    try {
-        $npmPath = Get-Command npm -ErrorAction SilentlyContinue
-        if ($npmPath) {
-            npm install -g @controlinfra/cli
-            return $true
-        }
-    } catch {
-        # npm not available
-    }
-
-    Write-Host "npm not found. Please install Node.js or download the binary manually." -ForegroundColor Red
-    Write-Host "Download from: https://github.com/$REPO/releases" -ForegroundColor Gray
-    return $false
-}
-
 function Verify-Installation {
     # Refresh PATH
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
@@ -128,12 +110,9 @@ function Main {
         Write-Host "Installed to: $installedPath" -ForegroundColor Gray
         Verify-Installation
     } else {
-        # Fallback to npm
-        if (Install-ViaNpm) {
-            Verify-Installation
-        } else {
-            exit 1
-        }
+        Write-Host "Installation failed. Download the binary manually from:" -ForegroundColor Red
+        Write-Host "  https://github.com/$REPO/releases" -ForegroundColor Gray
+        exit 1
     }
 }
 

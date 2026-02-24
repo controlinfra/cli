@@ -4,14 +4,22 @@ Command-line interface for Controlinfra - Infrastructure Drift Detection.
 
 ## Installation
 
+### Linux / macOS
+
 ```bash
-npm install -g @controlinfra/cli
+curl -fsSL https://controlinfra.com/cli/install.sh | bash
 ```
 
-Or run directly with npx:
+### Windows (PowerShell)
+
+```powershell
+iwr -useb https://controlinfra.com/cli/install.ps1 | iex
+```
+
+### Windows (Git Bash)
 
 ```bash
-npx @controlinfra/cli
+curl -fsSL https://controlinfra.com/cli/install.sh | bash
 ```
 
 ## Quick Start
@@ -294,7 +302,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install Controlinfra CLI
-        run: npm install -g @controlinfra/cli
+        run: curl -fsSL https://controlinfra.com/cli/install.sh | bash
 
       - name: Authenticate
         run: controlinfra login --token ${{ secrets.CONTROLINFRA_TOKEN }}
@@ -317,9 +325,10 @@ jobs:
 
 ```yaml
 drift-detection:
-  image: node:18
+  image: ubuntu:latest
   script:
-    - npm install -g @controlinfra/cli
+    - apt-get update && apt-get install -y curl
+    - curl -fsSL https://controlinfra.com/cli/install.sh | bash
     - controlinfra login --token $CONTROLINFRA_TOKEN
     - controlinfra scan run $CI_PROJECT_PATH --wait
     - controlinfra drifts list --json > drift-report.json
