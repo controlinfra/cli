@@ -3,6 +3,7 @@ const chalk = require('chalk');
 const { version } = require('../package.json');
 const { isAuthenticated } = require('./config');
 const api = require('./api');
+const { brand } = require('./output');
 
 // ASCII Art Banner
 const banner = `
@@ -15,19 +16,10 @@ const banner = `
 
 const gradientBanner = () => {
   const lines = banner.split('\n');
-  const colors = [
-    chalk.hex('#ac9fe0'),  // Purple
-    chalk.hex('#b5a8e3'),
-    chalk.hex('#bdb1e6'),
-    chalk.hex('#c5bae9'),
-    chalk.hex('#cdc3ec'),
-    chalk.hex('#bdedfa'),  // Light blue
-  ];
-
   lines.forEach((line, i) => {
     if (line.trim()) {
-      const colorIndex = Math.min(i, colors.length - 1);
-      console.log(colors[colorIndex](line));
+      const colorIndex = Math.min(i, brand.gradient.length - 1);
+      console.log(brand.gradient[colorIndex](line));
     }
   });
 };
@@ -497,13 +489,13 @@ program.action(async () => {
       // Greeting
       const greeting = getGreeting();
       const userName = user?.name || user?.email?.split('@')[0] || 'there';
-      console.log(`  ${chalk.cyan(greeting)}, ${chalk.bold(userName)}!\n`);
+      console.log(`  ${brand.purple(greeting)}, ${chalk.bold(userName)}!\n`);
 
       // Stats boxes
       const stats = [
-        { label: 'Repositories', value: repoList.length, color: chalk.cyan },
+        { label: 'Repositories', value: repoList.length, color: brand.cyan },
         { label: 'Active Drifts', value: driftList.length, color: driftList.length > 0 ? chalk.yellow : chalk.green },
-        { label: 'Total Scans', value: scanList.length, color: chalk.blue },
+        { label: 'Total Scans', value: scanList.length, color: brand.purple },
       ];
 
       // Add cloud scans remaining if available
@@ -511,31 +503,31 @@ program.action(async () => {
         stats.push({
           label: 'Cloud Scans',
           value: `${user.usage.cloudScansRemaining} remaining`,
-          color: chalk.magenta,
+          color: brand.light,
         });
       }
 
       // Display stats in a row
-      console.log('  ' + chalk.dim('─'.repeat(56)));
+      console.log('  ' + brand.purple('─'.repeat(56)));
       const statLine = stats.map(s => {
         const val = typeof s.value === 'number' ? s.color.bold(s.value) : s.color(s.value);
         return `${chalk.dim(s.label)}: ${val}`;
       }).join('   ');
       console.log(`  ${statLine}`);
-      console.log('  ' + chalk.dim('─'.repeat(56)));
+      console.log('  ' + brand.cyan('─'.repeat(56)));
       console.log();
 
       // Quick actions based on state
-      console.log(`  ${chalk.cyan('Quick Actions:')}`);
+      console.log(`  ${brand.purpleBold('Quick Actions:')}`);
       if (repoList.length === 0) {
-        console.log(`    ${chalk.yellow('controlinfra repos add <owner/repo>')}  ${chalk.dim('Add your first repository')}`);
+        console.log(`    ${brand.cyan('controlinfra repos add <owner/repo>')}  ${chalk.dim('Add your first repository')}`);
       } else {
-        console.log(`    ${chalk.yellow('controlinfra scan run <repo>')}         ${chalk.dim('Run a drift scan')}`);
+        console.log(`    ${brand.cyan('controlinfra scan run <repo>')}         ${chalk.dim('Run a drift scan')}`);
       }
       if (driftList.length > 0) {
-        console.log(`    ${chalk.yellow('controlinfra drifts list')}             ${chalk.dim('View active drifts')}`);
+        console.log(`    ${brand.cyan('controlinfra drifts list')}             ${chalk.dim('View active drifts')}`);
       }
-      console.log(`    ${chalk.yellow('controlinfra --help')}                  ${chalk.dim('View all commands')}`);
+      console.log(`    ${brand.cyan('controlinfra --help')}                  ${chalk.dim('View all commands')}`);
     } catch (_error) {
       // Fallback to basic view if API calls fail
       showBasicHelp();
@@ -543,14 +535,14 @@ program.action(async () => {
   } else {
     // Not authenticated - show login prompt
     console.log(`  ${chalk.yellow('Not logged in')}\n`);
-    console.log(`  ${chalk.cyan('Get Started:')}`);
-    console.log(`    ${chalk.yellow('controlinfra login')}        ${chalk.dim('Authenticate with your account')}`);
+    console.log(`  ${brand.purpleBold('Get Started:')}`);
+    console.log(`    ${brand.cyan('controlinfra login')}        ${chalk.dim('Authenticate with your account')}`);
     console.log();
-    console.log(`  ${chalk.dim('Don\'t have an account?')} ${chalk.cyan('https://controlinfra.com')}`);
+    console.log(`  ${chalk.dim('Don\'t have an account?')} ${brand.cyan('https://controlinfra.com')}`);
   }
 
   console.log();
-  console.log(`  ${chalk.dim('Documentation:')} ${chalk.cyan('https://docs.controlinfra.com')}`);
+  console.log(`  ${chalk.dim('Documentation:')} ${brand.cyan('https://docs.controlinfra.com')}`);
   console.log();
 });
 
@@ -564,11 +556,11 @@ function getGreeting() {
 
 // Helper: Show basic help without auth
 function showBasicHelp() {
-  console.log(`  ${chalk.cyan('Quick Start:')}`);
-  console.log(`    ${chalk.yellow('controlinfra login')}        ${chalk.dim('Authenticate with your account')}`);
-  console.log(`    ${chalk.yellow('controlinfra repos add')}    ${chalk.dim('Add a repository to monitor')}`);
-  console.log(`    ${chalk.yellow('controlinfra scan run')}     ${chalk.dim('Trigger a drift scan')}`);
-  console.log(`    ${chalk.yellow('controlinfra --help')}       ${chalk.dim('View all commands')}`);
+  console.log(`  ${brand.purpleBold('Quick Start:')}`);
+  console.log(`    ${brand.cyan('controlinfra login')}        ${chalk.dim('Authenticate with your account')}`);
+  console.log(`    ${brand.cyan('controlinfra repos add')}    ${chalk.dim('Add a repository to monitor')}`);
+  console.log(`    ${brand.cyan('controlinfra scan run')}     ${chalk.dim('Trigger a drift scan')}`);
+  console.log(`    ${brand.cyan('controlinfra --help')}       ${chalk.dim('View all commands')}`);
 }
 
 module.exports = { program };

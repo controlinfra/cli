@@ -27,6 +27,15 @@ const mockSpinner = {
   fail: jest.fn(),
 };
 jest.mock('../../src/output', () => ({
+  brand: {
+    purple: jest.fn((s) => s),
+    purpleBold: jest.fn((s) => s),
+    mid: jest.fn((s) => s),
+    light: jest.fn((s) => s),
+    cyan: jest.fn((s) => s),
+    cyanBold: jest.fn((s) => s),
+    gradient: Array(6).fill(jest.fn((s) => s)),
+  },
   createSpinner: jest.fn(() => mockSpinner),
   outputError: jest.fn(),
   outputInfo: jest.fn(),

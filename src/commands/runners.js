@@ -8,6 +8,7 @@ const {
   outputError,
   outputBox,
   colorStatus,
+  brand,
   formatRelativeTime,
 } = require('../output');
 
@@ -26,7 +27,7 @@ async function list(options) {
 
     if (runnerList.length === 0) {
       console.log(chalk.yellow('\nNo runners configured\n'));
-      console.log(chalk.dim('Create a runner with'), chalk.cyan('controlinfra runners add <name>\n'));
+      console.log(chalk.dim('Create a runner with'), brand.cyan('controlinfra runners add <name>\n'));
       return;
     }
 
@@ -40,7 +41,7 @@ async function list(options) {
       ['ID', 'Name', 'Status', 'Labels', 'Last Seen'],
       runnerList.map((runner) => [
         chalk.dim((runner.id || runner._id)?.slice(-8) || '-'),
-        chalk.cyan(runner.name || '-'),
+        brand.cyan(runner.name || '-'),
         colorStatus(runner.status || 'offline'),
         (runner.labels || []).join(', ') || '-',
         formatRelativeTime(runner.lastHeartbeat),
@@ -71,7 +72,7 @@ async function add(name, options) {
     });
 
     const runner = data.runner || data;
-    spinner.succeed(`Runner "${chalk.cyan(runner.name)}" created`);
+    spinner.succeed(`Runner "${brand.cyan(runner.name)}" created`);
 
     if (options?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(runner, null, 2));
@@ -82,15 +83,15 @@ async function add(name, options) {
     console.log();
     outputBox('Runner Created', [
       `ID:      ${runnerId}`,
-      `Name:    ${chalk.cyan(runner.name)}`,
+      `Name:    ${brand.cyan(runner.name)}`,
       `Token:   ${chalk.yellow(runner.token || data.token || '[hidden]')}`,
     ].join('\n'));
     console.log();
 
-    console.log(chalk.cyan('Setup Instructions:'));
+    console.log(brand.purpleBold('Setup Instructions:'));
     console.log(chalk.dim('─'.repeat(60)));
     console.log('\n1. Get the installation script:');
-    console.log(chalk.cyan(`   controlinfra runners setup ${runnerId}\n`));
+    console.log(brand.cyan(`   controlinfra runners setup ${runnerId}\n`));
     console.log('2. Or manually install the runner agent on your server');
     console.log();
   } catch (error) {
@@ -169,7 +170,7 @@ async function setup(runnerId, options) {
     // fullId is already resolved above via resolveRunnerId()
 
     if (os === 'linux' || os === 'macos') {
-      console.log(chalk.cyan('\nInstallation Script (Linux/macOS):\n'));
+      console.log(brand.purpleBold('\nInstallation Script (Linux/macOS):\n'));
       console.log(chalk.dim('# Download and run the installation script (run as root/sudo)'));
       console.log(`curl -sL "${apiUrl}/api/runners/${fullId}/setup?token=${token}" | sudo bash`);
       console.log();
@@ -182,7 +183,7 @@ async function setup(runnerId, options) {
       console.log('  -v /var/run/docker.sock:/var/run/docker.sock \\');
       console.log('  controlinfra/runner:latest');
     } else if (os === 'windows') {
-      console.log(chalk.cyan('\nInstallation Script (Windows PowerShell):\n'));
+      console.log(brand.purpleBold('\nInstallation Script (Windows PowerShell):\n'));
       console.log(chalk.dim('# Note: Windows support is experimental'));
       console.log(`$env:RUNNER_TOKEN="${token}"`);
       console.log(`$env:API_URL="${apiUrl}"`);
@@ -230,7 +231,7 @@ async function status(runnerId, options) {
     console.log();
     outputBox('Runner Status', [
       `ID:          ${chalk.dim(runner.id || runner._id)}`,
-      `Name:        ${chalk.cyan(runner.name)}`,
+      `Name:        ${brand.cyan(runner.name)}`,
       `Status:      ${colorStatus(runner.status || 'offline')}`,
       `Labels:      ${(runner.labels || []).join(', ') || '-'}`,
       `Version:     ${runner.version || '-'}`,
@@ -241,7 +242,7 @@ async function status(runnerId, options) {
 
     // Show recent jobs if available
     if (runner.recentJobs && runner.recentJobs.length > 0) {
-      console.log(chalk.cyan('Recent Jobs:'));
+      console.log(brand.purpleBold('Recent Jobs:'));
       runner.recentJobs.slice(0, 5).forEach((job) => {
         console.log(`  ${colorStatus(job.status)} ${job.repository || '-'} (${formatRelativeTime(job.completedAt)})`);
       });
@@ -322,7 +323,7 @@ async function regenerateToken(runnerId, options) {
     }
 
     console.log();
-    console.log(chalk.cyan('New Token:'), chalk.yellow(data.token));
+    console.log(brand.purpleBold('New Token:'), chalk.yellow(data.token));
     console.log();
     console.log(chalk.yellow('Update your runner configuration with this new token.'));
     console.log(chalk.dim('The old token is now invalid.\n'));

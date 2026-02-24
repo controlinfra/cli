@@ -2,6 +2,7 @@ const chalk = require('chalk');
 const { drifts } = require('../api');
 const { requireAuth } = require('../config');
 const {
+  brand,
   createSpinner,
   outputTable,
   outputError,
@@ -95,7 +96,7 @@ async function show(driftId, options) {
     console.log();
     outputBox('Drift Details', [
       `ID:          ${chalk.dim(drift._id)}`,
-      `Resource:    ${chalk.cyan(drift.resource?.address || '-')}`,
+      `Resource:    ${brand.cyan(drift.resource?.address || '-')}`,
       `Type:        ${drift.resource?.type || '-'}`,
       `Severity:    ${colorStatus(drift.severity)}`,
       `Status:      ${colorStatus(drift.status)}`,
@@ -105,7 +106,7 @@ async function show(driftId, options) {
 
     // Show changes if available
     if (drift.changes && drift.changes.length > 0) {
-      console.log(chalk.cyan('\nChanges:'));
+      console.log(brand.purpleBold('\nChanges:'));
       console.log(chalk.dim('─'.repeat(60)));
       drift.changes.forEach((change) => {
         console.log(`  ${chalk.yellow(change.attribute || change.path)}:`);
@@ -116,14 +117,14 @@ async function show(driftId, options) {
 
     // Show AI analysis if available
     if (drift.aiAnalysis) {
-      console.log(chalk.cyan('\nAI Analysis:'));
+      console.log(brand.purpleBold('\nAI Analysis:'));
       console.log(chalk.dim('─'.repeat(60)));
       console.log(`  ${drift.aiAnalysis.summary || drift.aiAnalysis}`);
     }
 
     // Show fix if available
     if (drift.fixCode) {
-      console.log(chalk.cyan('\nGenerated Fix:'));
+      console.log(brand.purpleBold('\nGenerated Fix:'));
       console.log(chalk.dim('─'.repeat(60)));
       console.log(drift.fixCode);
     }
@@ -159,11 +160,11 @@ async function fix(driftId, options) {
     }
 
     if (drift.fixCode) {
-      console.log(chalk.cyan('\nGenerated Fix:'));
+      console.log(brand.purpleBold('\nGenerated Fix:'));
       console.log(chalk.dim('─'.repeat(60)));
       console.log(drift.fixCode);
       console.log(chalk.dim('─'.repeat(60)));
-      console.log(chalk.dim('\nCreate PR with:'), chalk.cyan(`controlinfra drifts pr ${driftId}\n`));
+      console.log(chalk.dim('\nCreate PR with:'), brand.cyan(`controlinfra drifts pr ${driftId}\n`));
     }
   } catch (error) {
     spinner.fail('Failed to generate fix');
@@ -194,7 +195,7 @@ async function createPR(driftId, options) {
 
     const pr = data.pullRequest || data.pr || data;
     if (pr.url || pr.html_url) {
-      console.log(chalk.cyan(`\nPR URL: ${pr.url || pr.html_url}\n`));
+      console.log(brand.cyan(`\nPR URL: ${pr.url || pr.html_url}\n`));
     }
   } catch (error) {
     spinner.fail('Failed to create pull request');
@@ -284,13 +285,13 @@ async function stats(options) {
     outputBox('Drift Statistics', [
       `Total Drifts:   ${data.total || 0}`,
       '',
-      chalk.cyan('By Severity:'),
+      brand.purpleBold('By Severity:'),
       `  Critical:     ${chalk.red(data.bySeverity?.critical || 0)}`,
       `  High:         ${chalk.yellow(data.bySeverity?.high || 0)}`,
       `  Medium:       ${chalk.blue(data.bySeverity?.medium || 0)}`,
       `  Low:          ${chalk.gray(data.bySeverity?.low || 0)}`,
       '',
-      chalk.cyan('By Status:'),
+      brand.purpleBold('By Status:'),
       `  Detected:     ${data.byStatus?.detected || 0}`,
       `  Analyzed:     ${data.byStatus?.analyzed || 0}`,
       `  Resolved:     ${chalk.green(data.byStatus?.resolved || 0)}`,

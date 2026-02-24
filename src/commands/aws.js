@@ -2,7 +2,7 @@ const chalk = require('chalk');
 const inquirer = require('inquirer');
 const { integrations } = require('../api');
 const { requireAuth } = require('../config');
-const { createSpinner, outputError, outputBox } = require('../output');
+const { createSpinner, outputError, outputBox, brand } = require('../output');
 
 /**
  * Setup AWS credentials
@@ -59,7 +59,7 @@ async function setup(options) {
     });
     spinner.succeed('AWS credentials saved');
 
-    console.log(chalk.dim('\nTest credentials with:'), chalk.cyan('controlinfra aws test\n'));
+    console.log(chalk.dim('\nTest credentials with:'), brand.cyan('controlinfra aws test\n'));
   } catch (error) {
     spinner.fail('Failed to save AWS credentials');
     outputError(error.message);
@@ -93,7 +93,7 @@ async function status(options) {
       ].join('\n'));
     } else {
       console.log(chalk.yellow('AWS credentials not configured\n'));
-      console.log(chalk.dim('Set up with:'), chalk.cyan('controlinfra aws setup\n'));
+      console.log(chalk.dim('Set up with:'), brand.cyan('controlinfra aws setup\n'));
     }
   } catch (error) {
     spinner.fail('Failed to fetch AWS status');
@@ -116,7 +116,7 @@ async function test(_options) {
 
     if (!data.configured && !data.accessKeyId) {
       spinner.fail('AWS credentials not configured');
-      console.log(chalk.dim('\nSet up with:'), chalk.cyan('controlinfra aws setup\n'));
+      console.log(chalk.dim('\nSet up with:'), brand.cyan('controlinfra aws setup\n'));
       process.exit(1);
     }
 

@@ -9,12 +9,33 @@ const { getOutputFormat, isQuiet } = require('./config');
  */
 
 // ─────────────────────────────────────────────────────────
+// Brand Colors
+// ─────────────────────────────────────────────────────────
+const brand = {
+  purple: chalk.hex('#ac9fe0'),
+  purpleBold: chalk.hex('#ac9fe0').bold,
+  mid: chalk.hex('#b5a8e3'),
+  light: chalk.hex('#cdc3ec'),
+  cyan: chalk.hex('#bdedfa'),
+  cyanBold: chalk.hex('#bdedfa').bold,
+  // Gradient steps for decorative elements
+  gradient: [
+    chalk.hex('#ac9fe0'),
+    chalk.hex('#b5a8e3'),
+    chalk.hex('#bdb1e6'),
+    chalk.hex('#c5bae9'),
+    chalk.hex('#cdc3ec'),
+    chalk.hex('#bdedfa'),
+  ],
+};
+
+// ─────────────────────────────────────────────────────────
 // Spinners
 // ─────────────────────────────────────────────────────────
 function createSpinner(text) {
   return ora({
     text,
-    color: 'cyan',
+    color: 'magenta',
     spinner: 'dots',
   });
 }
@@ -29,10 +50,10 @@ const statusColors = {
   queued: chalk.yellow,
   failed: chalk.red,
   cancelled: chalk.gray,
-  cloning: chalk.cyan,
-  initializing: chalk.cyan,
-  planning: chalk.cyan,
-  analyzing: chalk.cyan,
+  cloning: brand.purple,
+  initializing: brand.purple,
+  planning: brand.purple,
+  analyzing: brand.purple,
 
   // Drift statuses
   detected: chalk.yellow,
@@ -40,7 +61,7 @@ const statusColors = {
   resolved: chalk.green,
   ignored: chalk.gray,
   wont_fix: chalk.gray,
-  fixing: chalk.cyan,
+  fixing: brand.purple,
   pr_created: chalk.magenta,
 
   // Severity
@@ -72,7 +93,7 @@ function colorStatus(status) {
 // ─────────────────────────────────────────────────────────
 function createTable(headers, options = {}) {
   return new Table({
-    head: headers.map((h) => chalk.cyan.bold(h)),
+    head: headers.map((h) => brand.purpleBold(h)),
     style: {
       head: [],
       border: [],
@@ -153,7 +174,7 @@ function outputWarning(message, options = {}) {
 
 function outputInfo(message, options = {}) {
   if (!isQuiet(options)) {
-    console.log(chalk.blue('ℹ'), message);
+    console.log(brand.purple('ℹ'), message);
   }
 }
 
@@ -228,17 +249,17 @@ function outputBox(title, content) {
   const width = 60;
   const border = '─'.repeat(width - 2);
 
-  console.log(chalk.cyan(`┌${border}┐`));
-  console.log(chalk.cyan('│') + chalk.bold(` ${title}`.padEnd(width - 2)) + chalk.cyan('│'));
-  console.log(chalk.cyan(`├${border}┤`));
+  console.log(brand.purple(`┌${border}┐`));
+  console.log(brand.purple('│') + brand.cyanBold(` ${title}`.padEnd(width - 2)) + brand.purple('│'));
+  console.log(brand.purple(`├${border}┤`));
 
   const lines = content.split('\n');
   lines.forEach((line) => {
     const paddedLine = padEndVisible(` ${line}`, width - 2);
-    console.log(chalk.cyan('│') + paddedLine + chalk.cyan('│'));
+    console.log(brand.purple('│') + paddedLine + brand.purple('│'));
   });
 
-  console.log(chalk.cyan(`└${border}┘`));
+  console.log(brand.purple(`└${border}┘`));
 }
 
 // ─────────────────────────────────────────────────────────
@@ -250,7 +271,7 @@ function outputProgress(current, total, label = '') {
   const filled = Math.round((current / total) * barWidth);
   const empty = barWidth - filled;
 
-  const bar = chalk.green('█'.repeat(filled)) + chalk.gray('░'.repeat(empty));
+  const bar = brand.purple('█'.repeat(filled)) + chalk.gray('░'.repeat(empty));
   process.stdout.write(`\r${bar} ${percentage}% ${label}`);
 
   if (current >= total) {
@@ -259,6 +280,7 @@ function outputProgress(current, total, label = '') {
 }
 
 module.exports = {
+  brand,
   createSpinner,
   colorStatus,
   statusColors,
