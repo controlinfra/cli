@@ -1,4 +1,10 @@
 const chalk = require('chalk');
+const { brand } = require('./output');
+
+// Raw hex values from shared brand palette
+const GRADIENT_START = brand.hex.purple;
+const GRADIENT_END = brand.hex.cyan;
+const SHADOW_COLOR = brand.hex.shadow;
 
 // Uppercase block font — 6 rows tall, 5 chars wide (I: 4 wide)
 const font = {
@@ -15,7 +21,6 @@ const font = {
 
 // Row brightness: top-lit 3D effect (bright top → darker bottom)
 const ROW_BRIGHTNESS = [1.2, 1.1, 1.0, 0.9, 0.8, 0.7];
-const SHADOW_COLOR = '#3d3466';
 
 // Interpolate between two hex colors
 function lerpColor(hex1, hex2, t) {
@@ -41,7 +46,7 @@ function applyBrightness(hex, bright) {
 
 /**
  * Render the "CONTROLINFRA" block-letter banner with 3D gradient
- * - Horizontal brand gradient (#ac9fe0 → #bdedfa)
+ * - Horizontal brand gradient (purple → cyan)
  * - Vertical brightness (bright top → dark bottom) for 3D depth
  * - Half-block shadow row at bottom
  */
@@ -59,20 +64,28 @@ function gradientBanner() {
     rows.push(line);
   }
 
-  // Render with combined horizontal + vertical gradient
-  console.log();
   const width = rows[0].length;
+
+  // Precompute per-column base gradient colors
+  const columnColors = [];
+  for (let j = 0; j < width; j++) {
+    const t = width > 1 ? j / (width - 1) : 0;
+    columnColors.push(lerpColor(GRADIENT_START, GRADIENT_END, t));
+  }
+
+  // Precompute per-row, per-column chalk styles
+  const styles = ROW_BRIGHTNESS.map((bright) =>
+    columnColors.map((base) => chalk.hex(applyBrightness(base, bright))),
+  );
+
+  const shadowStyle = chalk.hex(SHADOW_COLOR);
+
+  // Render with precomputed styles
+  console.log();
   rows.forEach((line, ri) => {
     let colored = '  ';
-    const bright = ROW_BRIGHTNESS[ri];
     for (let j = 0; j < line.length; j++) {
-      if (line[j] !== ' ') {
-        const t = width > 1 ? j / (width - 1) : 0;
-        const base = lerpColor('#ac9fe0', '#bdedfa', t);
-        colored += chalk.hex(applyBrightness(base, bright))('█');
-      } else {
-        colored += ' ';
-      }
+      colored += line[j] !== ' ' ? styles[ri][j]('█') : ' ';
     }
     console.log(colored);
   });
@@ -81,7 +94,7 @@ function gradientBanner() {
   const lastRow = rows[5];
   let shadow = '  ';
   for (let j = 0; j < lastRow.length; j++) {
-    shadow += lastRow[j] !== ' ' ? chalk.hex(SHADOW_COLOR)('▀') : ' ';
+    shadow += lastRow[j] !== ' ' ? shadowStyle('▀') : ' ';
   }
   console.log(shadow);
 }

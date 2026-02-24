@@ -11,21 +11,29 @@ const { getOutputFormat, isQuiet } = require('./config');
 // ─────────────────────────────────────────────────────────
 // Brand Colors
 // ─────────────────────────────────────────────────────────
+// Raw hex values — single source of truth for brand colors
+const brandHex = {
+  purple: '#ac9fe0',
+  cyan: '#bdedfa',
+  shadow: '#3d3466',
+};
+
 const brand = {
-  purple: chalk.hex('#ac9fe0'),
-  purpleBold: chalk.hex('#ac9fe0').bold,
+  hex: brandHex,
+  purple: chalk.hex(brandHex.purple),
+  purpleBold: chalk.hex(brandHex.purple).bold,
   mid: chalk.hex('#b5a8e3'),
   light: chalk.hex('#cdc3ec'),
-  cyan: chalk.hex('#bdedfa'),
-  cyanBold: chalk.hex('#bdedfa').bold,
+  cyan: chalk.hex(brandHex.cyan),
+  cyanBold: chalk.hex(brandHex.cyan).bold,
   // Gradient steps for decorative elements
   gradient: [
-    chalk.hex('#ac9fe0'),
+    chalk.hex(brandHex.purple),
     chalk.hex('#b5a8e3'),
     chalk.hex('#bdb1e6'),
     chalk.hex('#c5bae9'),
     chalk.hex('#cdc3ec'),
-    chalk.hex('#bdedfa'),
+    chalk.hex(brandHex.cyan),
   ],
 };
 
