@@ -1,7 +1,7 @@
 const { Command } = require('commander');
 const chalk = require('chalk');
 const { version } = require('../package.json');
-const { isAuthenticated } = require('./config');
+const { isAuthenticated, getApiUrl, setApiUrl, getConfigPath, reset } = require('./config');
 const api = require('./api');
 const { brand } = require('./output');
 const { gradientBanner } = require('./banner');
@@ -443,6 +443,53 @@ ai
   .command('remove')
   .description('Remove custom AI key (use default)')
   .action(aiCommands.remove);
+
+// ─────────────────────────────────────────────────────────
+// Config Commands
+// ─────────────────────────────────────────────────────────
+const cfg = program.command('config').description('Manage CLI configuration');
+
+cfg
+  .command('set <key> <value>')
+  .description('Set a config value (e.g., apiUrl)')
+  .action((key, value) => {
+    if (key === 'apiUrl') {
+      setApiUrl(value);
+      console.log(brand.cyan(`  apiUrl set to ${value}`));
+    } else {
+      console.log(chalk.red(`  Unknown config key: ${key}`));
+      console.log(chalk.dim('  Available keys: apiUrl'));
+    }
+  });
+
+cfg
+  .command('get <key>')
+  .description('Get a config value')
+  .action((key) => {
+    if (key === 'apiUrl') {
+      console.log(getApiUrl());
+    } else if (key === 'path') {
+      console.log(getConfigPath());
+    } else {
+      console.log(chalk.red(`  Unknown config key: ${key}`));
+      console.log(chalk.dim('  Available keys: apiUrl, path'));
+    }
+  });
+
+cfg
+  .command('reset')
+  .description('Reset all configuration')
+  .action(() => {
+    reset();
+    console.log(brand.cyan('  Configuration reset to defaults'));
+  });
+
+cfg
+  .command('path')
+  .description('Show config file path')
+  .action(() => {
+    console.log(getConfigPath());
+  });
 
 // ─────────────────────────────────────────────────────────
 // Default action (no command)
