@@ -1,6 +1,7 @@
 const chalk = require('chalk');
 const { workspaces } = require('../api');
 const { requireAuth } = require('../config');
+const { resolveWorkspaceId } = require('./workspaces');
 const {
   createSpinner,
   outputTable,
@@ -8,27 +9,6 @@ const {
   brand,
   formatRelativeTime,
 } = require('../output');
-
-/**
- * Resolve a partial ID or name to a full workspace ID
- */
-async function resolveWorkspaceId(partialId) {
-  const data = await workspaces.list();
-  const workspaceList = data.workspaces || data || [];
-
-  const exactMatch = workspaceList.find((ws) => ws._id === partialId);
-  if (exactMatch) return exactMatch._id;
-
-  const partialMatch = workspaceList.find((ws) => ws._id?.endsWith(partialId));
-  if (partialMatch) return partialMatch._id;
-
-  const nameMatch = workspaceList.find(
-    (ws) => (ws.name || '').toLowerCase().includes(partialId.toLowerCase()),
-  );
-  if (nameMatch) return nameMatch._id;
-
-  return null;
-}
 
 /**
  * List workspace access

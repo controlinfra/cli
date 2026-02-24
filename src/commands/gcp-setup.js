@@ -54,9 +54,9 @@ async function setup(options) {
       clientEmail = parsed.clientEmail;
       privateKey = parsed.privateKey;
       authMethod = 'service_account';
-      console.log(chalk.green('  '), 'Parsed project:', brand.cyan(projectId));
-      console.log(chalk.green('  '), 'Parsed service account:', brand.cyan(clientEmail));
-      console.log(chalk.green('  '), 'Private key found\n');
+      console.log(chalk.green('  ✓'), 'Parsed project:', brand.cyan(projectId));
+      console.log(chalk.green('  ✓'), 'Parsed service account:', brand.cyan(clientEmail));
+      console.log(chalk.green('  ✓'), 'Private key found\n');
     } catch (error) {
       outputError(error.message);
       process.exit(1);
@@ -93,9 +93,9 @@ async function setup(options) {
         projectId = parsed.projectId;
         clientEmail = parsed.clientEmail;
         privateKey = parsed.privateKey;
-        console.log(chalk.green('\n  '), 'Parsed project:', brand.cyan(projectId));
-        console.log(chalk.green('  '), 'Parsed service account:', brand.cyan(clientEmail));
-        console.log(chalk.green('  '), 'Private key found\n');
+        console.log(chalk.green('\n  ✓'), 'Parsed project:', brand.cyan(projectId));
+        console.log(chalk.green('  ✓'), 'Parsed service account:', brand.cyan(clientEmail));
+        console.log(chalk.green('  ✓'), 'Private key found\n');
       } catch (error) {
         outputError(error.message);
         process.exit(1);

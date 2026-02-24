@@ -205,7 +205,7 @@ describe('login manual token entry - settings URL', () => {
     config.getApiUrl.mockReturnValue('https://api.controlinfra.com');
     await login({});
     expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining('https://controlinfra.com/settings'),
+      expect.stringContaining('https://console.controlinfra.com/settings'),
     );
   });
 
@@ -213,7 +213,7 @@ describe('login manual token entry - settings URL', () => {
     config.getApiUrl.mockReturnValue('https://api-stage.controlinfra.com');
     await login({});
     expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining('https://stage.controlinfra.com/settings'),
+      expect.stringContaining('https://console-stage.controlinfra.com/settings'),
     );
   });
 

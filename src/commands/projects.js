@@ -64,7 +64,7 @@ async function create(name, options, command) {
   const spinner = createSpinner(`Creating project "${name}"...`).start();
 
   try {
-    const payload = { name };
+    const payload = { name, cloudProvider: options.provider || 'aws' };
     if (options.description) payload.description = options.description;
 
     const data = await projects.create(payload);
