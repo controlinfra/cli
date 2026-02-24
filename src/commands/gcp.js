@@ -4,7 +4,7 @@ const chalk = require('chalk');
 const inquirer = require('inquirer');
 const { integrations } = require('../api');
 const { requireAuth } = require('../config');
-const { createSpinner, outputError, outputBox } = require('../output');
+const { createSpinner, outputError, outputBox, brand } = require('../output');
 
 /**
  * Validate GCP Project ID format
@@ -91,8 +91,8 @@ async function setup(options) {
       privateKey = parsed.privateKey;
       authMethod = 'service_account';
 
-      console.log(chalk.green('  ✓'), 'Parsed project:', chalk.cyan(projectId));
-      console.log(chalk.green('  ✓'), 'Parsed service account:', chalk.cyan(clientEmail));
+      console.log(chalk.green('  ✓'), 'Parsed project:', brand.cyan(projectId));
+      console.log(chalk.green('  ✓'), 'Parsed service account:', brand.cyan(clientEmail));
       console.log(chalk.green('  ✓'), 'Private key found\n');
     } catch (error) {
       outputError(error.message);
@@ -160,8 +160,8 @@ async function setup(options) {
           clientEmail = parsed.clientEmail;
           privateKey = parsed.privateKey;
 
-          console.log(chalk.green('\n  ✓'), 'Parsed project:', chalk.cyan(projectId));
-          console.log(chalk.green('  ✓'), 'Parsed service account:', chalk.cyan(clientEmail));
+          console.log(chalk.green('\n  ✓'), 'Parsed project:', brand.cyan(projectId));
+          console.log(chalk.green('  ✓'), 'Parsed service account:', brand.cyan(clientEmail));
           console.log(chalk.green('  ✓'), 'Private key found\n');
         } catch (error) {
           outputError(error.message);
@@ -212,7 +212,7 @@ async function setup(options) {
     await integrations.saveGcpCredentials(credentials);
     spinner.succeed('GCP credentials saved');
 
-    console.log(chalk.dim('\nTest credentials with:'), chalk.cyan('controlinfra gcp test\n'));
+    console.log(chalk.dim('\nTest credentials with:'), brand.cyan('controlinfra gcp test\n'));
   } catch (error) {
     spinner.fail('Failed to save GCP credentials');
     outputError(error.message);
@@ -257,7 +257,7 @@ async function status(options) {
       outputBox('GCP Credentials', lines.join('\n'));
     } else {
       console.log(chalk.yellow('GCP credentials not configured\n'));
-      console.log(chalk.dim('Set up with:'), chalk.cyan('controlinfra gcp setup\n'));
+      console.log(chalk.dim('Set up with:'), brand.cyan('controlinfra gcp setup\n'));
     }
   } catch (error) {
     spinner.fail('Failed to fetch GCP status');
@@ -282,7 +282,7 @@ async function test(_options) {
 
     if (!data.hasCredentials) {
       spinner.fail('GCP credentials not configured');
-      console.log(chalk.dim('\nSet up with:'), chalk.cyan('controlinfra gcp setup\n'));
+      console.log(chalk.dim('\nSet up with:'), brand.cyan('controlinfra gcp setup\n'));
       process.exit(1);
     }
 

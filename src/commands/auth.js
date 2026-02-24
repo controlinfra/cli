@@ -5,7 +5,7 @@ const inquirer = require('inquirer');
 const api = require('../api');
 const { auth } = api;
 const { saveAuth, clearAuth, getUser, isAuthenticated, getApiUrl, getConfigPath } = require('../config');
-const { createSpinner, outputError, outputInfo, outputBox } = require('../output');
+const { brand, createSpinner, outputError, outputInfo, outputBox } = require('../output');
 const { canOpenBrowser } = require('../utils/browser-detect');
 const { getSuccessHtml, getErrorHtml } = require('./auth-html');
 
@@ -80,7 +80,7 @@ async function browserAuthFlow() {
 
       console.log(chalk.dim('  Opening browser for GitHub authentication...\n'));
       console.log(chalk.dim('  If browser does not open, visit:'));
-      console.log(chalk.cyan(`  ${authUrl}\n`));
+      console.log(brand.cyan(`  ${authUrl}\n`));
 
       // Open browser using native OS command (avoids 'open' npm dep for pkg builds)
       if (process.platform === 'win32') {
@@ -156,8 +156,8 @@ async function manualTokenEntry() {
     settingsUrl = 'https://controlinfra.com/settings';
   }
 
-  console.log(chalk.cyan('  To authenticate on this machine:\n'));
-  console.log(`  1. Go to ${chalk.cyan(settingsUrl)}`);
+  console.log(brand.purpleBold('  To authenticate on this machine:\n'));
+  console.log(`  1. Go to ${brand.cyan(settingsUrl)}`);
   console.log(`  2. Navigate to ${chalk.bold('Integrations')} > ${chalk.bold('CLI API Tokens')}`);
   console.log('  3. Create a new token and copy it\n');
   console.log(chalk.dim(`  Or run: ${chalk.yellow('controlinfra login --token <your-token>')}\n`));
@@ -225,7 +225,7 @@ async function logout() {
 async function whoami(options) {
   if (!isAuthenticated()) {
     console.log(chalk.yellow('\nNot logged in\n'));
-    console.log(chalk.dim('Run'), chalk.cyan('controlinfra login'), chalk.dim('to authenticate\n'));
+    console.log(chalk.dim('Run'), brand.cyan('controlinfra login'), chalk.dim('to authenticate\n'));
     return;
   }
 
@@ -246,7 +246,7 @@ async function whoami(options) {
 
     console.log();
     outputBox('Current User', [
-      `Name:    ${chalk.cyan(user.displayName || '-')}`,
+      `Name:    ${brand.cyan(user.displayName || '-')}`,
       `Email:   ${user.email || '-'}`,
       `Role:    ${user.role || 'user'}`,
       `GitHub:  ${user.githubUsername || '-'}`,
@@ -271,7 +271,7 @@ async function whoami(options) {
     outputError(error.message);
 
     // Token might be invalid
-    console.log(chalk.dim('\nTry logging in again with'), chalk.cyan('controlinfra login\n'));
+    console.log(chalk.dim('\nTry logging in again with'), brand.cyan('controlinfra login\n'));
   }
 }
 
@@ -314,7 +314,7 @@ async function showDashboard(user) {
   else if (hour < 17) greeting = 'Good afternoon';
 
   const userName = user?.displayName || user?.name || user?.email?.split('@')[0] || 'there';
-  console.log(`\n  ${chalk.cyan(greeting)}, ${chalk.bold(userName)}!`);
+  console.log(`\n  ${brand.cyan(greeting)}, ${chalk.bold(userName)}!`);
   console.log(chalk.dim('  Welcome to Controlinfra CLI\n'));
 
   // Fetch stats
@@ -336,7 +336,7 @@ async function showDashboard(user) {
     // Stats
     console.log('  ' + chalk.dim('─'.repeat(56)));
     const stats = [
-      `${chalk.dim('Repositories')}: ${chalk.cyan.bold(repoList.length)}`,
+      `${chalk.dim('Repositories')}: ${brand.cyanBold(repoList.length)}`,
       `${chalk.dim('Active Drifts')}: ${driftList.length > 0 ? chalk.yellow.bold(driftList.length) : chalk.green.bold(0)}`,
       `${chalk.dim('Total Scans')}: ${chalk.blue.bold(scanList.length)}`,
     ];
@@ -345,7 +345,7 @@ async function showDashboard(user) {
     console.log();
 
     // Quick actions
-    console.log(`  ${chalk.cyan('Quick Actions:')}`);
+    console.log(`  ${brand.purpleBold('Quick Actions:')}`);
     if (repoList.length === 0) {
       console.log(`    ${chalk.yellow('controlinfra repos add <owner/repo>')}  ${chalk.dim('Add your first repository')}`);
     } else {
@@ -356,12 +356,12 @@ async function showDashboard(user) {
     }
     console.log(`    ${chalk.yellow('controlinfra --help')}                  ${chalk.dim('View all commands')}`);
     console.log();
-    console.log(`  ${chalk.dim('Documentation:')} ${chalk.cyan('https://docs.controlinfra.com')}`);
+    console.log(`  ${chalk.dim('Documentation:')} ${brand.cyan('https://docs.controlinfra.com')}`);
     console.log();
   } catch (_error) {
     spinner.stop();
     // Show basic message on error
-    console.log(`\n  ${chalk.cyan('Get started:')}`);
+    console.log(`\n  ${brand.purpleBold('Get started:')}`);
     console.log(`    ${chalk.yellow('controlinfra --help')}  ${chalk.dim('View all available commands')}`);
     console.log();
   }

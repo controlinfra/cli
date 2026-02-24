@@ -2,7 +2,7 @@ const chalk = require('chalk');
 const inquirer = require('inquirer');
 const { integrations } = require('../api');
 const { requireAuth } = require('../config');
-const { createSpinner, outputError, outputBox } = require('../output');
+const { createSpinner, outputError, outputBox, brand } = require('../output');
 
 /**
  * Validate Azure UUID format
@@ -96,7 +96,7 @@ async function setup(options) {
     });
     spinner.succeed('Azure credentials saved');
 
-    console.log(chalk.dim('\nTest credentials with:'), chalk.cyan('controlinfra azure test\n'));
+    console.log(chalk.dim('\nTest credentials with:'), brand.cyan('controlinfra azure test\n'));
   } catch (error) {
     spinner.fail('Failed to save Azure credentials');
     outputError(error.message);
@@ -133,7 +133,7 @@ async function status(options) {
       ].join('\n'));
     } else {
       console.log(chalk.yellow('Azure credentials not configured\n'));
-      console.log(chalk.dim('Set up with:'), chalk.cyan('controlinfra azure setup\n'));
+      console.log(chalk.dim('Set up with:'), brand.cyan('controlinfra azure setup\n'));
     }
   } catch (error) {
     spinner.fail('Failed to fetch Azure status');
@@ -158,7 +158,7 @@ async function test(_options) {
 
     if (!data.hasCredentials) {
       spinner.fail('Azure credentials not configured');
-      console.log(chalk.dim('\nSet up with:'), chalk.cyan('controlinfra azure setup\n'));
+      console.log(chalk.dim('\nSet up with:'), brand.cyan('controlinfra azure setup\n'));
       process.exit(1);
     }
 

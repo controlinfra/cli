@@ -2,7 +2,7 @@ const chalk = require('chalk');
 const inquirer = require('inquirer');
 const { integrations } = require('../api');
 const { requireAuth } = require('../config');
-const { createSpinner,  outputError, outputBox } = require('../output');
+const { createSpinner, outputError, outputBox, brand } = require('../output');
 
 /**
  * Show current AI provider status
@@ -23,15 +23,15 @@ async function status(options) {
 
     console.log();
     outputBox('AI Provider', [
-      `Provider:     ${chalk.cyan(data.provider || 'default')}`,
+      `Provider:     ${brand.cyan(data.provider || 'default')}`,
       `Custom Key:   ${data.hasCustomKey ? chalk.green('Yes') : chalk.dim('No (using default)')}`,
     ].join('\n'));
     console.log();
 
     if (!data.hasCustomKey) {
       console.log(chalk.dim('Use your own API key with:'));
-      console.log(chalk.cyan('  controlinfra ai use anthropic --key <your-api-key>'));
-      console.log(chalk.cyan('  controlinfra ai use openai --key <your-api-key>\n'));
+      console.log(brand.cyan('  controlinfra ai use anthropic --key <your-api-key>'));
+      console.log(brand.cyan('  controlinfra ai use openai --key <your-api-key>\n'));
     }
   } catch (error) {
     spinner.fail('Failed to fetch AI provider status');
@@ -131,7 +131,7 @@ async function verify(_options) {
     if (!data.hasCustomKey) {
       spinner.warn('No custom API key configured');
       console.log(chalk.dim('\nUsing default Controlinfra AI. Set your own key with:'));
-      console.log(chalk.cyan('  controlinfra ai use anthropic --key <your-api-key>\n'));
+      console.log(brand.cyan('  controlinfra ai use anthropic --key <your-api-key>\n'));
       return;
     }
 
@@ -147,7 +147,7 @@ async function verify(_options) {
   } catch (error) {
     spinner.fail('API key verification failed');
     outputError(error.message);
-    console.log(chalk.dim('\nUpdate your key with:'), chalk.cyan('controlinfra ai use <provider> --key <new-key>\n'));
+    console.log(chalk.dim('\nUpdate your key with:'), brand.cyan('controlinfra ai use <provider> --key <new-key>\n'));
     process.exit(1);
   }
 }

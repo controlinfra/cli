@@ -2,6 +2,7 @@ const chalk = require('chalk');
 const { scans, repos, drifts } = require('../api');
 const { requireAuth } = require('../config');
 const {
+  brand,
   createSpinner,
   outputTable,
   outputError,
@@ -164,7 +165,7 @@ function outputDriftTable(scanId, driftDetails, driftResults, isJson, gateOption
       (parts.length ? ` (${parts.join(', ')})` : ''),
   );
   console.log();
-  console.log(`  ${chalk.dim('View details:')} ${chalk.cyan(consoleUrl)}`);
+  console.log(`  ${chalk.dim('View details:')} ${brand.cyan(consoleUrl)}`);
 }
 
 /**
@@ -205,12 +206,12 @@ async function run(repository, options, command) {
     if (!repoConfig) {
       spinner.fail(`Repository "${repository}"${options.directory ? ` with directory "${options.directory}"` : ''} not found`);
       console.log(chalk.dim('\nMake sure the repository is configured. Run:'));
-      console.log(chalk.cyan(`  controlinfra repos add ${repository}\n`));
+      console.log(brand.cyan(`  controlinfra repos add ${repository}\n`));
       if (matchingConfigs.length === 0 && configsArray.some(r => r.repository?.fullName === repository)) {
         console.log(chalk.dim('Available directories for this repo:'));
         configsArray
           .filter(r => r.repository?.fullName === repository)
-          .forEach(r => console.log(chalk.cyan(`  - ${r.terraformConfig?.directory || '.'}`)));
+          .forEach(r => console.log(brand.cyan(`  - ${r.terraformConfig?.directory || '.'}`)));
         console.log();
       }
       process.exit(1);
@@ -220,7 +221,7 @@ async function run(repository, options, command) {
     if (matchingConfigs.length > 1 && !options.directory) {
       spinner.warn(`Multiple workspaces found for "${repository}". Using: ${repoConfig.terraformConfig?.directory || '.'}`);
       console.log(chalk.dim('Specify a directory with --directory or -d option:'));
-      matchingConfigs.forEach(r => console.log(chalk.cyan(`  controlinfra scan run ${repository} -d ${r.terraformConfig?.directory || '.'}`)));
+      matchingConfigs.forEach(r => console.log(brand.cyan(`  controlinfra scan run ${repository} -d ${r.terraformConfig?.directory || '.'}`)));
       console.log();
     }
 
@@ -230,7 +231,7 @@ async function run(repository, options, command) {
     });
 
     const scanId = scanData.scanId || scanData.scan?._id || scanData._id;
-    spinner.succeed(`Scan started: ${chalk.cyan(scanId)}`);
+    spinner.succeed(`Scan started: ${brand.cyan(scanId)}`);
 
     if (options.wait) {
       // Check if JSON output is requested (global flag)
@@ -316,7 +317,7 @@ async function status(scanId, options) {
     console.log();
     outputBox('Scan Status', [
       `ID:          ${chalk.dim(scan._id)}`,
-      `Repository:  ${chalk.cyan(scan.repositoryConfigId?.repository?.fullName || '-')}`,
+      `Repository:  ${brand.cyan(scan.repositoryConfigId?.repository?.fullName || '-')}`,
       `Status:      ${colorStatus(scan.status)}`,
       `Started:     ${formatRelativeTime(scan.timing?.startedAt || scan.createdAt)}`,
       `Duration:    ${formatDuration(scan.timing?.totalDuration)}`,
@@ -326,7 +327,7 @@ async function status(scanId, options) {
 
     if (isRunning) {
       console.log(chalk.dim('Scan is still running. Wait with:'));
-      console.log(chalk.cyan(`  controlinfra scan wait ${scanId}\n`));
+      console.log(brand.cyan(`  controlinfra scan wait ${scanId}\n`));
     }
   } catch (error) {
     spinner.fail('Failed to fetch scan status');
@@ -434,7 +435,7 @@ async function waitForScan(scanId, options = {}) {
             } else if (!isJson) {
               // Original behavior - just show info (only in non-JSON mode)
               console.log();
-              console.log(chalk.dim('View drifts with:'), chalk.cyan(`controlinfra drifts list --scan ${scanId}\n`));
+              console.log(chalk.dim('View drifts with:'), brand.cyan(`controlinfra drifts list --scan ${scanId}\n`));
             }
           } else {
             console.log(chalk.green('\nNo drifts detected - infrastructure matches state\n'));
@@ -580,7 +581,7 @@ async function logs(scanId, options) {
 
     // Show timing breakdown
     if (scan.timing) {
-      console.log(chalk.cyan('\nTiming:'));
+      console.log(brand.purpleBold('\nTiming:'));
       console.log(`  Clone:      ${formatDuration(scan.timing.cloneDuration)}`);
       console.log(`  Init:       ${formatDuration(scan.timing.initDuration)}`);
       console.log(`  Plan:       ${formatDuration(scan.timing.planDuration)}`);
@@ -596,7 +597,7 @@ async function logs(scanId, options) {
 
     // Show plan output if available
     if (scan.planOutput) {
-      console.log(chalk.cyan('\nPlan Output:'));
+      console.log(brand.purpleBold('\nPlan Output:'));
       console.log(chalk.dim('─'.repeat(60)));
       console.log(scan.planOutput);
     }

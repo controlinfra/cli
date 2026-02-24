@@ -8,6 +8,7 @@ const {
   outputError,
   outputBox,
   colorStatus,
+  brand,
   formatRelativeTime,
 } = require('../output');
 
@@ -34,7 +35,7 @@ async function list(options, command) {
 
     if (repoList.length === 0) {
       console.log(chalk.yellow('\nNo repositories configured\n'));
-      console.log(chalk.dim('Add a repository with'), chalk.cyan('controlinfra repos add <owner/repo>\n'));
+      console.log(chalk.dim('Add a repository with'), brand.cyan('controlinfra repos add <owner/repo>\n'));
       return;
     }
 
@@ -43,7 +44,7 @@ async function list(options, command) {
       ['ID', 'Repository', 'Branch', 'Status', 'Last Scan'],
       repoList.map((repo) => [
         chalk.dim(repo._id?.slice(-8) || '-'),
-        chalk.cyan(repo.repository?.fullName || repo.fullName || '-'),
+        brand.cyan(repo.repository?.fullName || repo.fullName || '-'),
         repo.branch || 'main',
         colorStatus(repo.lastScanStatus || 'pending'),
         formatRelativeTime(repo.lastScanAt),
@@ -289,11 +290,11 @@ async function add(repository, options) {
 
     const result = await repos.create(payload);
 
-    spinner.succeed(`Repository ${chalk.cyan(repository)} added successfully`);
+    spinner.succeed(`Repository ${brand.cyan(repository)} added successfully`);
 
     if (result.config?._id || result._id) {
       console.log(chalk.dim(`\nRepository ID: ${result.config?._id || result._id}`));
-      console.log(chalk.dim('Trigger a scan with:'), chalk.cyan(`controlinfra scan run ${repository}\n`));
+      console.log(chalk.dim('Trigger a scan with:'), brand.cyan(`controlinfra scan run ${repository}\n`));
     }
   } catch (error) {
     spinner.fail('Failed to add repository');
@@ -403,7 +404,7 @@ async function info(id, options) {
 
     console.log();
     outputBox('Repository Details', [
-      `Name:         ${chalk.cyan(repo.repository?.fullName || '-')}`,
+      `Name:         ${brand.cyan(repo.repository?.fullName || '-')}`,
       `Branch:       ${repo.repository?.defaultBranch || repo.branch || 'main'}`,
       `Terraform:    ${repo.terraformConfig?.directory || repo.terraformDir || '.'}`,
       `Schedule:     ${repo.scanConfig?.schedule || repo.schedule || 'manual'}`,

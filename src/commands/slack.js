@@ -2,7 +2,7 @@ const chalk = require('chalk');
 const inquirer = require('inquirer');
 const { integrations } = require('../api');
 const { requireAuth } = require('../config');
-const { createSpinner, outputError, outputBox } = require('../output');
+const { createSpinner, outputError, outputBox, brand } = require('../output');
 
 /**
  * Setup Slack integration
@@ -39,7 +39,7 @@ async function setup(options) {
     });
     spinner.succeed('Slack integration configured');
 
-    console.log(chalk.dim('\nTest with:'), chalk.cyan('controlinfra slack test\n'));
+    console.log(chalk.dim('\nTest with:'), brand.cyan('controlinfra slack test\n'));
   } catch (error) {
     spinner.fail('Failed to configure Slack');
     outputError(error.message);
@@ -90,7 +90,7 @@ async function status(options) {
       ].join('\n'));
     } else {
       console.log(chalk.yellow('Slack integration not configured\n'));
-      console.log(chalk.dim('Set up with:'), chalk.cyan('controlinfra slack setup\n'));
+      console.log(chalk.dim('Set up with:'), brand.cyan('controlinfra slack setup\n'));
     }
   } catch (error) {
     spinner.fail('Failed to fetch Slack status');

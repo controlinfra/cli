@@ -8,6 +8,7 @@ const {
   outputError,
   outputBox,
   formatRelativeTime,
+  brand,
 } = require('../output');
 
 /**
@@ -32,7 +33,7 @@ async function list(options, command) {
 
     if (workspaceList.length === 0) {
       console.log(chalk.yellow('\nNo workspaces found\n'));
-      console.log(chalk.dim('Create a workspace with'), chalk.cyan('controlinfra workspaces add <name>\n'));
+      console.log(chalk.dim('Create a workspace with'), brand.cyan('controlinfra workspaces add <name>\n'));
       return;
     }
 
@@ -41,7 +42,7 @@ async function list(options, command) {
       ['ID', 'Name', 'Cloud', 'Default', 'Created'],
       workspaceList.map((ws) => [
         chalk.dim(ws._id?.slice(-8) || '-'),
-        chalk.cyan(ws.name || '-'),
+        brand.cyan(ws.name || '-'),
         ws.cloudProvider || '-',
         ws.isDefault ? chalk.green('Yes') : chalk.dim('No'),
         formatRelativeTime(ws.createdAt),
@@ -127,12 +128,12 @@ async function add(name, options) {
     }
 
     const result = await workspaces.create(payload);
-    spinner.succeed(`Workspace "${chalk.cyan(name)}" created successfully`);
+    spinner.succeed(`Workspace "${brand.cyan(name)}" created successfully`);
 
     if (result.workspace?._id || result._id) {
       console.log(chalk.dim(`\nWorkspace ID: ${result.workspace?._id || result._id}`));
       console.log(chalk.dim('Add a repository to this workspace with:'));
-      console.log(chalk.cyan(`  controlinfra repos add <owner/repo> --workspace ${result.workspace?._id || result._id}\n`));
+      console.log(brand.cyan(`  controlinfra repos add <owner/repo> --workspace ${result.workspace?._id || result._id}\n`));
     }
   } catch (error) {
     spinner.fail('Failed to create workspace');
@@ -169,7 +170,7 @@ async function info(id, options) {
 
     console.log();
     outputBox('Workspace Details', [
-      `Name:         ${chalk.cyan(ws.name || '-')}`,
+      `Name:         ${brand.cyan(ws.name || '-')}`,
       `Cloud:        ${ws.cloudProvider || '-'}`,
       `Default:      ${ws.isDefault ? chalk.green('Yes') : 'No'}`,
       `Created:      ${formatRelativeTime(ws.createdAt)}`,
