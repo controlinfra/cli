@@ -12,7 +12,7 @@ const {
 /**
  * List organization members
  */
-async function members(orgId, options) {
+async function members(orgId, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching members...').start();
@@ -22,7 +22,7 @@ async function members(orgId, options) {
     const memberList = data.members || data || [];
     spinner.stop();
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(memberList, null, 2));
       return;
     }
@@ -54,7 +54,7 @@ async function members(orgId, options) {
 /**
  * Invite a user to the organization
  */
-async function invite(orgId, email, options) {
+async function invite(orgId, email, options, command) {
   requireAuth();
 
   const spinner = createSpinner(`Inviting ${email}...`).start();
@@ -63,7 +63,7 @@ async function invite(orgId, email, options) {
     const data = await orgs.invite(orgId, email, options.role || 'member');
     spinner.succeed(`Invitation sent to ${brand.cyan(email)}`);
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(data, null, 2));
     }
   } catch (error) {
@@ -76,7 +76,7 @@ async function invite(orgId, email, options) {
 /**
  * Generate an invitation link
  */
-async function inviteLink(orgId, options) {
+async function inviteLink(orgId, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Generating invite link...').start();
@@ -85,7 +85,7 @@ async function inviteLink(orgId, options) {
     const data = await orgs.getInviteLink(orgId);
     spinner.succeed('Invite link generated');
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(data, null, 2));
       return;
     }
@@ -103,7 +103,7 @@ async function inviteLink(orgId, options) {
 /**
  * List pending invitations
  */
-async function invitations(orgId, options) {
+async function invitations(orgId, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching invitations...').start();
@@ -113,7 +113,7 @@ async function invitations(orgId, options) {
     const inviteList = data.invitations || data || [];
     spinner.stop();
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(inviteList, null, 2));
       return;
     }

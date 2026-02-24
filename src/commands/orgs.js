@@ -14,7 +14,7 @@ const {
 /**
  * List organizations
  */
-async function list(options) {
+async function list(options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching organizations...').start();
@@ -24,7 +24,7 @@ async function list(options) {
     const orgList = data.organizations || data.orgs || data || [];
     spinner.stop();
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(orgList, null, 2));
       return;
     }
@@ -58,7 +58,7 @@ async function list(options) {
 /**
  * Create a new organization
  */
-async function create(name, options) {
+async function create(name, options, command) {
   requireAuth();
 
   const spinner = createSpinner(`Creating organization "${name}"...`).start();
@@ -68,7 +68,7 @@ async function create(name, options) {
     const org = data.organization || data.org || data;
     spinner.succeed(`Organization "${brand.cyan(name)}" created`);
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(org, null, 2));
       return;
     }
@@ -85,7 +85,7 @@ async function create(name, options) {
 /**
  * Show organization details
  */
-async function info(id, options) {
+async function info(id, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching organization info...').start();
@@ -95,7 +95,7 @@ async function info(id, options) {
     const org = data.organization || data.org || data;
     spinner.stop();
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(org, null, 2));
       return;
     }
@@ -119,7 +119,7 @@ async function info(id, options) {
 /**
  * Update organization
  */
-async function update(id, options) {
+async function update(id, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Updating organization...').start();
@@ -138,7 +138,7 @@ async function update(id, options) {
     const org = data.organization || data.org || data;
     spinner.succeed('Organization updated');
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(org, null, 2));
       return;
     }

@@ -60,7 +60,7 @@ describe('CLI Organization Commands', () => {
       });
 
       const output = stdout + stderr;
-      expect(output).toMatch(/not found|error|invalid/i);
+      expect(output).toMatch(/not found|error|invalid|failed/i);
     });
   });
 

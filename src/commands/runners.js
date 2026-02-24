@@ -26,14 +26,14 @@ async function list(options, command) {
     const runnerList = data.runners || data || [];
     spinner.stop();
 
-    if (runnerList.length === 0) {
-      console.log(chalk.yellow('\nNo runners configured\n'));
-      console.log(chalk.dim('Create a runner with'), brand.cyan('controlinfra runners add <name>\n'));
+    if (command?.parent?.parent?.opts()?.json) {
+      console.log(JSON.stringify(runnerList, null, 2));
       return;
     }
 
-    if (command?.parent?.parent?.opts()?.json) {
-      console.log(JSON.stringify(runnerList, null, 2));
+    if (runnerList.length === 0) {
+      console.log(chalk.yellow('\nNo runners configured\n'));
+      console.log(chalk.dim('Create a runner with'), brand.cyan('controlinfra runners add <name>\n'));
       return;
     }
 
