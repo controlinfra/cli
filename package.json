@@ -1,6 +1,6 @@
 {
   "name": "@controlinfra/cli",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "CLI for Controlinfra - Infrastructure Drift Detection",
   "main": "src/index.js",
   "bin": {
