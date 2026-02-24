@@ -7,7 +7,7 @@ const { createSpinner, outputError, outputBox, brand } = require('../output');
 /**
  * Show current AI provider status
  */
-async function status(options) {
+async function status(options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching AI provider status...').start();
@@ -16,7 +16,7 @@ async function status(options) {
     const data = await integrations.getAiProvider();
     spinner.stop();
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(data, null, 2));
       return;
     }

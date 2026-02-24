@@ -46,6 +46,29 @@ describe('CLI Scan Commands', () => {
       expect(stdout).toContain('list');
       expect(stdout).toContain('status');
     });
+
+    it('should display retry subcommand in help', () => {
+      const { stdout, exitCode } = runCLI('scan --help');
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('retry');
+    });
+
+    it('should display delete subcommand in help', () => {
+      const { stdout, exitCode } = runCLI('scan --help');
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('delete');
+    });
+  });
+
+  describe('scan retry help', () => {
+    it('should display retry help with description', () => {
+      const { stdout, exitCode } = runCLI('scan retry --help');
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toMatch(/retry|re-run|scan/i);
+    });
   });
 
   describe('scan run help (drift gate options)', () => {

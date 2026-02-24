@@ -24,7 +24,6 @@ async function list(options, command) {
     const workspaceList = data.workspaces || data || [];
     spinner.stop();
 
-    // Handle JSON output
     const isJson = command?.parent?.parent?.opts()?.json;
     if (isJson) {
       console.log(JSON.stringify(workspaceList, null, 2));
@@ -72,73 +71,47 @@ async function add(name, options) {
   const spinner = createSpinner(`Creating workspace "${name}"...`).start();
 
   try {
-    const payload = {
-      name,
-      cloudProvider,
-    };
+    const payload = { name, cloudProvider };
 
-    // Add cloud-specific config based on provider
     if (cloudProvider === 'aws') {
-      payload.awsConfig = {
-        authMethod: options.authMethod || 'credentials',
-        region: options.region || 'us-east-1',
-      };
+      payload.awsConfig = { authMethod: options.authMethod || 'credentials', region: options.region || 'us-east-1' };
     } else if (cloudProvider === 'azure') {
-      payload.azureConfig = {
-        authMethod: options.azureAuthMethod || 'service_principal',
-        environment: options.azureEnvironment || 'public',
-      };
-      if (options.subscriptionId) {
-        payload.azureConfig.subscriptionId = options.subscriptionId;
-      }
+      payload.azureConfig = { authMethod: options.azureAuthMethod || 'service_principal', environment: options.azureEnvironment || 'public' };
+      if (options.subscriptionId) payload.azureConfig.subscriptionId = options.subscriptionId;
     } else if (cloudProvider === 'gcp') {
-      // Handle JSON file import for GCP
-      let projectId = options.gcpProjectId;
-      let clientEmail = options.gcpClientEmail;
-      let privateKey = options.gcpPrivateKey;
-
+      let projectId = options.gcpProjectId, clientEmail = options.gcpClientEmail, privateKey = options.gcpPrivateKey;
       if (options.gcpJsonFile) {
         try {
           const fs = require('fs');
-          const jsonContent = fs.readFileSync(options.gcpJsonFile, 'utf8');
-          const serviceAccount = JSON.parse(jsonContent);
-          projectId = serviceAccount.project_id || projectId;
-          clientEmail = serviceAccount.client_email || clientEmail;
-          privateKey = serviceAccount.private_key || privateKey;
+          const sa = JSON.parse(fs.readFileSync(options.gcpJsonFile, 'utf8'));
+          projectId = sa.project_id || projectId;
+          clientEmail = sa.client_email || clientEmail;
+          privateKey = sa.private_key || privateKey;
         } catch (err) {
           spinner.fail('Failed to read GCP JSON file');
           outputError(err.message);
           process.exit(1);
         }
       }
-
-      payload.gcpConfig = {
-        authMethod: options.gcpAuthMethod || 'service_account',
-      };
-
-      if (projectId) {
-        payload.gcpConfig.projectId = projectId;
-      }
-      if (clientEmail) {
-        payload.gcpConfig.clientEmail = clientEmail;
-      }
-      if (privateKey) {
-        payload.gcpConfig.privateKey = privateKey;
-      }
+      payload.gcpConfig = { authMethod: options.gcpAuthMethod || 'service_account' };
+      if (projectId) payload.gcpConfig.projectId = projectId;
+      if (clientEmail) payload.gcpConfig.clientEmail = clientEmail;
+      if (privateKey) payload.gcpConfig.privateKey = privateKey;
     }
 
     const result = await workspaces.create(payload);
     spinner.succeed(`Workspace "${brand.cyan(name)}" created successfully`);
 
     if (result.workspace?._id || result._id) {
-      console.log(chalk.dim(`\nWorkspace ID: ${result.workspace?._id || result._id}`));
+      const wsId = result.workspace?._id || result._id;
+      console.log(chalk.dim(`\nWorkspace ID: ${wsId}`));
       console.log(chalk.dim('Add a repository to this workspace with:'));
-      console.log(brand.cyan(`  controlinfra repos add <owner/repo> --workspace ${result.workspace?._id || result._id}\n`));
+      console.log(brand.cyan(`  controlinfra repos add <owner/repo> --workspace ${wsId}\n`));
     }
   } catch (error) {
     spinner.fail('Failed to create workspace');
-    const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
-    outputError(errorMessage);
+    const msg = error.response?.data?.error || error.response?.data?.message || error.message;
+    outputError(msg);
     process.exit(1);
   }
 }
@@ -146,7 +119,7 @@ async function add(name, options) {
 /**
  * Get workspace details
  */
-async function info(id, options) {
+async function info(id, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching workspace info...').start();
@@ -163,7 +136,7 @@ async function info(id, options) {
     const ws = data.workspace || data;
     spinner.stop();
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(ws, null, 2));
       return;
     }
@@ -185,21 +158,56 @@ async function info(id, options) {
 }
 
 /**
+ * Update a workspace
+ */
+async function update(id, options, command) {
+  requireAuth();
+
+  const spinner = createSpinner('Updating workspace...').start();
+
+  try {
+    const fullId = await resolveWorkspaceId(id);
+    if (!fullId) {
+      spinner.fail('Workspace not found');
+      outputError(`No workspace found matching "${id}"`);
+      process.exit(1);
+    }
+
+    const updates = {};
+    if (options.name) updates.name = options.name;
+    if (options.cloudProvider) updates.cloudProvider = options.cloudProvider;
+
+    if (Object.keys(updates).length === 0) {
+      spinner.warn('No updates specified');
+      return;
+    }
+
+    const data = await workspaces.update(fullId, updates);
+    const ws = data.workspace || data;
+    spinner.succeed('Workspace updated');
+
+    if (command?.parent?.parent?.opts()?.json) {
+      console.log(JSON.stringify(ws, null, 2));
+    }
+  } catch (error) {
+    spinner.fail('Failed to update workspace');
+    outputError(error.message);
+    process.exit(1);
+  }
+}
+
+/**
  * Delete a workspace
  */
 async function remove(id, options) {
   requireAuth();
 
   if (!options.force) {
-    const { confirm } = await inquirer.prompt([
-      {
-        type: 'confirm',
-        name: 'confirm',
-        message: 'Are you sure you want to delete this workspace? This cannot be undone.',
-        default: false,
-      },
-    ]);
-
+    const { confirm } = await inquirer.prompt([{
+      type: 'confirm', name: 'confirm',
+      message: 'Are you sure you want to delete this workspace? This cannot be undone.',
+      default: false,
+    }]);
     if (!confirm) {
       console.log(chalk.dim('Cancelled\n'));
       return;
@@ -257,15 +265,12 @@ async function resolveWorkspaceId(partialId) {
   const data = await workspaces.list();
   const workspaceList = data.workspaces || data || [];
 
-  // Try exact match first
   const exactMatch = workspaceList.find((ws) => ws._id === partialId);
   if (exactMatch) return exactMatch._id;
 
-  // Try partial match (ID ends with the partial)
   const partialMatch = workspaceList.find((ws) => ws._id?.endsWith(partialId));
   if (partialMatch) return partialMatch._id;
 
-  // Try matching by name
   const nameMatch = workspaceList.find(
     (ws) => (ws.name || '').toLowerCase().includes(partialId.toLowerCase()),
   );
@@ -278,6 +283,7 @@ module.exports = {
   list,
   add,
   info,
+  update,
   remove,
   setDefault,
 };
