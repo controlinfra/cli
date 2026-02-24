@@ -91,7 +91,13 @@ async function info(id, options, command) {
   const spinner = createSpinner('Fetching organization info...').start();
 
   try {
-    const data = await orgs.get(id);
+    const fullId = await resolveOrgId(id);
+    if (!fullId) {
+      spinner.fail('Organization not found');
+      outputError(`No organization found matching "${id}"`);
+      process.exit(1);
+    }
+    const data = await orgs.get(fullId);
     const org = data.organization || data.org || data;
     spinner.stop();
 
@@ -125,6 +131,13 @@ async function update(id, options, command) {
   const spinner = createSpinner('Updating organization...').start();
 
   try {
+    const fullId = await resolveOrgId(id);
+    if (!fullId) {
+      spinner.fail('Organization not found');
+      outputError(`No organization found matching "${id}"`);
+      process.exit(1);
+    }
+
     const updates = {};
     if (options.name) updates.name = options.name;
 
@@ -134,7 +147,7 @@ async function update(id, options, command) {
       return;
     }
 
-    const data = await orgs.update(id, updates);
+    const data = await orgs.update(fullId, updates);
     const org = data.organization || data.org || data;
     spinner.succeed('Organization updated');
 
@@ -175,7 +188,13 @@ async function deleteOrg(id, options) {
   const spinner = createSpinner('Deleting organization...').start();
 
   try {
-    await orgs.delete(id);
+    const fullId = await resolveOrgId(id);
+    if (!fullId) {
+      spinner.fail('Organization not found');
+      outputError(`No organization found matching "${id}"`);
+      process.exit(1);
+    }
+    await orgs.delete(fullId);
     spinner.succeed('Organization deleted');
   } catch (error) {
     spinner.fail('Failed to delete organization');
@@ -184,4 +203,25 @@ async function deleteOrg(id, options) {
   }
 }
 
-module.exports = { list, create, info, update, deleteOrg };
+/**
+ * Resolve a partial ID or name to a full org ID
+ */
+async function resolveOrgId(partialId) {
+  const data = await orgs.list();
+  const orgList = data.organizations || data.orgs || data || [];
+
+  const exactMatch = orgList.find((o) => (o.id || o._id) === partialId);
+  if (exactMatch) return exactMatch.id || exactMatch._id;
+
+  const partialMatch = orgList.find((o) => (o.id || o._id)?.endsWith(partialId));
+  if (partialMatch) return partialMatch.id || partialMatch._id;
+
+  const nameMatch = orgList.find(
+    (o) => (o.name || '').toLowerCase().includes(partialId.toLowerCase()),
+  );
+  if (nameMatch) return nameMatch.id || nameMatch._id;
+
+  return null;
+}
+
+module.exports = { list, create, info, update, deleteOrg, resolveOrgId };

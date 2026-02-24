@@ -1,6 +1,7 @@
 const chalk = require('chalk');
 const { orgs } = require('../api');
 const { requireAuth } = require('../config');
+const { resolveOrgId } = require('./orgs');
 const {
   createSpinner,
   outputTable,
@@ -18,7 +19,9 @@ async function members(orgId, options, command) {
   const spinner = createSpinner('Fetching members...').start();
 
   try {
-    const data = await orgs.getMembers(orgId);
+    const fullId = await resolveOrgId(orgId);
+    if (!fullId) { spinner.fail('Organization not found'); outputError(`No organization found matching "${orgId}"`); process.exit(1); }
+    const data = await orgs.getMembers(fullId);
     const memberList = data.members || data || [];
     spinner.stop();
 
@@ -60,7 +63,9 @@ async function invite(orgId, email, options, command) {
   const spinner = createSpinner(`Inviting ${email}...`).start();
 
   try {
-    const data = await orgs.invite(orgId, email, options.role || 'member');
+    const fullId = await resolveOrgId(orgId);
+    if (!fullId) { spinner.fail('Organization not found'); outputError(`No organization found matching "${orgId}"`); process.exit(1); }
+    const data = await orgs.invite(fullId, email, options.role || 'member');
     spinner.succeed(`Invitation sent to ${brand.cyan(email)}`);
 
     if (command?.parent?.parent?.opts()?.json) {
@@ -82,7 +87,9 @@ async function inviteLink(orgId, options, command) {
   const spinner = createSpinner('Generating invite link...').start();
 
   try {
-    const data = await orgs.getInviteLink(orgId);
+    const fullId = await resolveOrgId(orgId);
+    if (!fullId) { spinner.fail('Organization not found'); outputError(`No organization found matching "${orgId}"`); process.exit(1); }
+    const data = await orgs.getInviteLink(fullId);
     spinner.succeed('Invite link generated');
 
     if (command?.parent?.parent?.opts()?.json) {
@@ -91,7 +98,8 @@ async function inviteLink(orgId, options, command) {
     }
 
     console.log();
-    console.log(brand.purpleBold('Invite Link:'), brand.cyan(data.link || data.url));
+    const inviteUrl = data.link || data.url || (data.token ? `https://apps.controlinfra.com/invite?token=${data.token}` : undefined);
+    console.log(brand.purpleBold('Invite Link:'), brand.cyan(inviteUrl || '-'));
     console.log(chalk.dim('\nShare this link with people you want to invite.\n'));
   } catch (error) {
     spinner.fail('Failed to generate invite link');
@@ -109,7 +117,9 @@ async function invitations(orgId, options, command) {
   const spinner = createSpinner('Fetching invitations...').start();
 
   try {
-    const data = await orgs.getInvitations(orgId);
+    const fullId = await resolveOrgId(orgId);
+    if (!fullId) { spinner.fail('Organization not found'); outputError(`No organization found matching "${orgId}"`); process.exit(1); }
+    const data = await orgs.getInvitations(fullId);
     const inviteList = data.invitations || data || [];
     spinner.stop();
 
@@ -152,7 +162,9 @@ async function revoke(orgId, inviteId, _options) {
   const spinner = createSpinner('Revoking invitation...').start();
 
   try {
-    await orgs.revokeInvitation(orgId, inviteId);
+    const fullId = await resolveOrgId(orgId);
+    if (!fullId) { spinner.fail('Organization not found'); outputError(`No organization found matching "${orgId}"`); process.exit(1); }
+    await orgs.revokeInvitation(fullId, inviteId);
     spinner.succeed('Invitation revoked');
   } catch (error) {
     spinner.fail('Failed to revoke invitation');
@@ -170,7 +182,9 @@ async function removeMember(orgId, userId, _options) {
   const spinner = createSpinner('Removing member...').start();
 
   try {
-    await orgs.removeMember(orgId, userId);
+    const fullId = await resolveOrgId(orgId);
+    if (!fullId) { spinner.fail('Organization not found'); outputError(`No organization found matching "${orgId}"`); process.exit(1); }
+    await orgs.removeMember(fullId, userId);
     spinner.succeed('Member removed');
   } catch (error) {
     spinner.fail('Failed to remove member');
@@ -188,7 +202,9 @@ async function updateRole(orgId, userId, role, _options) {
   const spinner = createSpinner('Updating role...').start();
 
   try {
-    await orgs.updateRole(orgId, userId, role);
+    const fullId = await resolveOrgId(orgId);
+    if (!fullId) { spinner.fail('Organization not found'); outputError(`No organization found matching "${orgId}"`); process.exit(1); }
+    await orgs.updateRole(fullId, userId, role);
     spinner.succeed(`Role updated to ${brand.cyan(role)}`);
   } catch (error) {
     spinner.fail('Failed to update role');
@@ -206,7 +222,9 @@ async function leave(orgId, _options) {
   const spinner = createSpinner('Leaving organization...').start();
 
   try {
-    await orgs.leave(orgId);
+    const fullId = await resolveOrgId(orgId);
+    if (!fullId) { spinner.fail('Organization not found'); outputError(`No organization found matching "${orgId}"`); process.exit(1); }
+    await orgs.leave(fullId);
     spinner.succeed('Left organization');
   } catch (error) {
     spinner.fail('Failed to leave organization');
@@ -224,7 +242,9 @@ async function transfer(orgId, userId, _options) {
   const spinner = createSpinner('Transferring ownership...').start();
 
   try {
-    await orgs.transfer(orgId, userId);
+    const fullId = await resolveOrgId(orgId);
+    if (!fullId) { spinner.fail('Organization not found'); outputError(`No organization found matching "${orgId}"`); process.exit(1); }
+    await orgs.transfer(fullId, userId);
     spinner.succeed('Ownership transferred');
   } catch (error) {
     spinner.fail('Failed to transfer ownership');

@@ -32,12 +32,12 @@ const orgs = {
   },
 
   async invite(orgId, email, role) {
-    const { data } = await getClient().post(`/api/orgs/${orgId}/invitations`, { email, role });
+    const { data } = await getClient().post(`/api/orgs/${orgId}/invitations/email`, { email, role });
     return data;
   },
 
   async getInviteLink(orgId) {
-    const { data } = await getClient().post(`/api/orgs/${orgId}/invite-link`);
+    const { data } = await getClient().post(`/api/orgs/${orgId}/invitations/link`);
     return data;
   },
 
@@ -67,12 +67,12 @@ const orgs = {
   },
 
   async transfer(orgId, userId) {
-    const { data } = await getClient().post(`/api/orgs/${orgId}/transfer`, { userId });
+    const { data } = await getClient().post(`/api/orgs/${orgId}/transfer-ownership`, { userId });
     return data;
   },
 
   async acceptInvite(token) {
-    const { data } = await getClient().post('/api/orgs/accept-invite', { token });
+    const { data } = await getClient().post(`/api/orgs/invitations/${token}/accept`);
     return data;
   },
 };

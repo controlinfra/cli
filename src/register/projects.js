@@ -12,6 +12,7 @@ function registerProjects(program) {
   projects
     .command('create <name>')
     .description('Create a new project')
+    .option('--provider <provider>', 'Cloud provider: aws, azure, gcp', 'aws')
     .option('--description <desc>', 'Project description')
     .action(projectCommands.create);
 
