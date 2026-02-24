@@ -3,7 +3,6 @@ name: CI
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
     branches: [main]
   schedule:
@@ -147,8 +146,8 @@ jobs:
           path: dist/
           retention-days: 30
 
-  auto-tag:
-    name: Auto Tag Release
+  release:
+    name: Tag & Release
     runs-on: ubuntu-latest
     needs: [build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -166,7 +165,7 @@ jobs:
           echo "version=v${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Check if tag already exists
-        id: check
+        id: check-tag
         run: |
           if git rev-parse "${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
             echo "exists=true" >> $GITHUB_OUTPUT
@@ -175,35 +174,38 @@ jobs:
           fi
 
       - name: Create and push tag
-        if: steps.check.outputs.exists == 'false'
+        if: steps.check-tag.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           git tag ${{ steps.version.outputs.version }}
           git push origin ${{ steps.version.outputs.version }}
 
-  release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    needs: [build]
-    if: startsWith(github.ref, 'refs/tags/v')
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Check if release already exists
+        id: check-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Download binaries
+        if: steps.check-release.outputs.exists == 'false'
         uses: actions/download-artifact@v4
         with:
           name: cli-binaries
           path: dist/
 
       - name: Create GitHub Release
+        if: steps.check-release.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create ${{ github.ref_name }} \
-            --title "Controlinfra CLI ${{ github.ref_name }}" \
+          gh release create ${{ steps.version.outputs.version }} \
+            --title "Controlinfra CLI ${{ steps.version.outputs.version }}" \
             --generate-notes \
             dist/*
 
