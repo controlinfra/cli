@@ -98,7 +98,7 @@ async function inviteLink(orgId, options, command) {
     }
 
     console.log();
-    const inviteUrl = data.link || data.url || (data.token ? `https://apps.controlinfra.com/invite?token=${data.token}` : undefined);
+    const inviteUrl = data.link || data.url || (data.token ? `https://console.controlinfra.com/invite?token=${data.token}` : undefined);
     console.log(brand.purpleBold('Invite Link:'), brand.cyan(inviteUrl || '-'));
     console.log(chalk.dim('\nShare this link with people you want to invite.\n'));
   } catch (error) {

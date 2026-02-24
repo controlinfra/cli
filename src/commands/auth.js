@@ -143,9 +143,9 @@ async function manualTokenEntry() {
   if (apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')) {
     settingsUrl = 'http://localhost:5173/settings';
   } else if (apiUrl.includes('stage')) {
-    settingsUrl = 'https://stage.controlinfra.com/settings';
+    settingsUrl = 'https://console-stage.controlinfra.com/settings';
   } else {
-    settingsUrl = 'https://controlinfra.com/settings';
+    settingsUrl = 'https://console.controlinfra.com/settings';
   }
 
   console.log(brand.purpleBold('  To authenticate on this machine:\n'));

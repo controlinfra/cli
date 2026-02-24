@@ -286,4 +286,5 @@ module.exports = {
   update,
   remove,
   setDefault,
+  resolveWorkspaceId,
 };

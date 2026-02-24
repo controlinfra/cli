@@ -55,9 +55,9 @@ function getConsoleUrl(scanId) {
   if (apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')) {
     return `http://localhost:5173/scans/${scanId}`;
   } else if (apiUrl.includes('stage')) {
-    return `https://stage.controlinfra.com/scans/${scanId}`;
+    return `https://console-stage.controlinfra.com/scans/${scanId}`;
   }
-  return `https://controlinfra.com/scans/${scanId}`;
+  return `https://console.controlinfra.com/scans/${scanId}`;
 }
 
 /**

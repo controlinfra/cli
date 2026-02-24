@@ -85,7 +85,7 @@ async function setup(runnerId, options, command) {
 
     console.log();
     console.log(chalk.dim('─'.repeat(60)));
-    console.log(chalk.yellow('\n  A new token was generated. Any previously installed runner'));
+    console.log(chalk.yellow('\n⚠️  A new token was generated. Any previously installed runner'));
     console.log(chalk.yellow('   using the old token will need to be reinstalled.\n'));
     console.log(chalk.dim('Keep the token secure - it provides access to your account.\n'));
   } catch (error) {
