@@ -85,7 +85,8 @@ async function browserAuthFlow() {
 
       // Open browser using native OS command (avoids 'open' npm dep for pkg builds)
       if (process.platform === 'win32') {
-        execFile('cmd', ['/c', 'start', '', authUrl]);
+        // cmd.exe treats & as command separator; escape with ^ so the full URL opens
+        execFile('cmd', ['/c', 'start', '', authUrl.replace(/&/g, '^&')]);
       } else {
         execFile(process.platform === 'darwin' ? 'open' : 'xdg-open', [authUrl]);
       }
