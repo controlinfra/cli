@@ -6,6 +6,7 @@ const api = require('../api');
 const { auth } = api;
 const { saveAuth, clearAuth, getUser, isAuthenticated, getApiUrl, getConfigPath } = require('../config');
 const { brand, createSpinner, outputError, outputInfo, outputBox } = require('../output');
+const { gradientBanner } = require('../banner');
 const { canOpenBrowser } = require('../utils/browser-detect');
 const { getSuccessHtml, getErrorHtml } = require('./auth-html');
 
@@ -279,33 +280,7 @@ async function whoami(options) {
  * Show dashboard after login
  */
 async function showDashboard(user) {
-  console.log();
-
-  // ASCII Banner
-  const banner = `
-   ____            _             _ _        __
-  / ___|___  _ __ | |_ _ __ ___ | (_)_ __  / _|_ __ __ _
- | |   / _ \\| '_ \\| __| '__/ _ \\| | | '_ \\| |_| '__/ _\` |
- | |__| (_) | | | | |_| | | (_) | | | | | |  _| | | (_| |
-  \\____\\___/|_| |_|\\__|_|  \\___/|_|_|_| |_|_| |_|  \\__,_|
-`;
-
-  const lines = banner.split('\n');
-  const colors = [
-    chalk.hex('#ac9fe0'),
-    chalk.hex('#b5a8e3'),
-    chalk.hex('#bdb1e6'),
-    chalk.hex('#c5bae9'),
-    chalk.hex('#cdc3ec'),
-    chalk.hex('#bdedfa'),
-  ];
-
-  lines.forEach((line, i) => {
-    if (line.trim()) {
-      const colorIndex = Math.min(i, colors.length - 1);
-      console.log(colors[colorIndex](line));
-    }
-  });
+  gradientBanner();
 
   // Greeting
   const hour = new Date().getHours();

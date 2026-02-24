@@ -4,25 +4,7 @@ const { version } = require('../package.json');
 const { isAuthenticated } = require('./config');
 const api = require('./api');
 const { brand } = require('./output');
-
-// ASCII Art Banner
-const banner = `
-   ____            _             _ _        __
-  / ___|___  _ __ | |_ _ __ ___ | (_)_ __  / _|_ __ __ _
- | |   / _ \\| '_ \\| __| '__/ _ \\| | | '_ \\| |_| '__/ _\` |
- | |__| (_) | | | | |_| | | (_) | | | | | |  _| | | (_| |
-  \\____\\___/|_| |_|\\__|_|  \\___/|_|_|_| |_|_| |_|  \\__,_|
-`;
-
-const gradientBanner = () => {
-  const lines = banner.split('\n');
-  lines.forEach((line, i) => {
-    if (line.trim()) {
-      const colorIndex = Math.min(i, brand.gradient.length - 1);
-      console.log(brand.gradient[colorIndex](line));
-    }
-  });
-};
+const { gradientBanner } = require('./banner');
 
 // Import command modules
 const authCommands = require('./commands/auth');
@@ -467,8 +449,9 @@ ai
 // ─────────────────────────────────────────────────────────
 program.action(async () => {
   gradientBanner();
-  console.log(chalk.dim('  Infrastructure Drift Detection CLI'));
-  console.log(chalk.dim(`  Version ${version}\n`));
+  console.log();
+  console.log(brand.light('  Infrastructure Drift Detection CLI'));
+  console.log(brand.cyan(`  Version ${version}\n`));
 
   // Check if user is authenticated and show personalized dashboard
   if (isAuthenticated()) {
