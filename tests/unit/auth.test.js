@@ -55,6 +55,10 @@ jest.mock('../../src/commands/auth-html', () => ({
   getErrorHtml: jest.fn(() => '<html>error</html>'),
 }));
 
+jest.mock('child_process', () => ({
+  execFile: jest.fn(),
+}));
+
 jest.mock('inquirer', () => ({
   prompt: jest.fn(),
 }));
@@ -63,6 +67,8 @@ const api = require('../../src/api');
 const config = require('../../src/config');
 const output = require('../../src/output');
 const inquirer = require('inquirer');
+const childProcess = require('child_process');
+const http = require('http');
 const { canOpenBrowser } = require('../../src/utils/browser-detect');
 const { login, logout, whoami } = require('../../src/commands/auth');
 
@@ -217,5 +223,52 @@ describe('login manual token entry - settings URL', () => {
     expect(console.log).toHaveBeenCalledWith(
       expect.stringContaining('http://localhost:5173/settings'),
     );
+  });
+});
+
+describe('browser auth - Windows URL escaping', () => {
+  const originalPlatform = process.platform;
+
+  afterEach(() => {
+    Object.defineProperty(process, 'platform', { value: originalPlatform });
+    if (http.createServer.mockRestore) http.createServer.mockRestore();
+  });
+
+  it('should escape cmd metacharacters in auth URL on Windows', async () => {
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    canOpenBrowser.mockReturnValue(true);
+    config.getApiUrl.mockReturnValue('https://api.controlinfra.com');
+    api.auth.getMe.mockResolvedValue({ user: { displayName: 'Test' } });
+    api.repos.list.mockResolvedValue({ configs: [] });
+    api.scans.list.mockResolvedValue({ scans: [] });
+    api.drifts.list.mockResolvedValue({ drifts: [] });
+
+    // Mock HTTP server to simulate OAuth callback
+    const requestHandlers = [];
+    const mockServer = {
+      listen: jest.fn((port, host, cb) => cb()),
+      address: jest.fn(() => ({ port: 12345 })),
+      on: jest.fn((event, handler) => { if (event === 'request') requestHandlers.push(handler); }),
+      close: jest.fn(),
+    };
+    jest.spyOn(http, 'createServer').mockReturnValue(mockServer);
+
+    const loginPromise = login({});
+    await new Promise((r) => setImmediate(r));
+
+    // Simulate OAuth callback with token
+    const mockReq = { url: '/callback?token=test-jwt-token' };
+    const mockRes = { writeHead: jest.fn(), end: jest.fn() };
+    requestHandlers[0](mockReq, mockRes);
+
+    await loginPromise;
+
+    // Verify cmd was called with escaped URL (& becomes ^&)
+    expect(childProcess.execFile).toHaveBeenCalledWith(
+      'cmd',
+      ['/c', 'start', '', expect.stringContaining('^&redirect_uri')],
+    );
+    const escapedUrl = childProcess.execFile.mock.calls[0][1][3];
+    expect(escapedUrl).not.toMatch(/(?<!\^)&/);
   });
 });
