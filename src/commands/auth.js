@@ -213,7 +213,7 @@ async function logout() {
 /**
  * Show current authenticated user
  */
-async function whoami(options) {
+async function whoami(options, command) {
   if (!isAuthenticated()) {
     console.log(chalk.yellow('\nNot logged in\n'));
     console.log(chalk.dim('Run'), brand.cyan('controlinfra login'), chalk.dim('to authenticate\n'));
@@ -229,7 +229,7 @@ async function whoami(options) {
 
     saveAuth({ user });
 
-    if (options?.parent?.opts()?.json) {
+    if (command?.parent?.opts()?.json) {
       console.log(JSON.stringify(user, null, 2));
       return;
     }

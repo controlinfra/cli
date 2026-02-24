@@ -27,7 +27,7 @@ async function resolveRunnerId(partialId) {
 /**
  * Get runner installation script
  */
-async function setup(runnerId, options) {
+async function setup(runnerId, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Generating setup script...').start();
@@ -52,7 +52,7 @@ async function setup(runnerId, options) {
     const data = await runners.getSetup(fullId);
     spinner.stop();
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify({ ...data, token }, null, 2));
       return;
     }

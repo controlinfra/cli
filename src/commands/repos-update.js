@@ -7,7 +7,7 @@ const { resolveRepoId } = require('./repos');
 /**
  * Update a repository configuration
  */
-async function update(id, options) {
+async function update(id, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Updating repository...').start();
@@ -60,8 +60,8 @@ async function update(id, options) {
     if (options.scheduleDay) {
       updates.scanConfig = { ...(updates.scanConfig || {}), scheduleDay: parseInt(options.scheduleDay, 10) };
     }
-    if (options.autoCreatePr !== undefined) {
-      updates.scanConfig = { ...(updates.scanConfig || {}), autoCreatePr: options.autoCreatePr };
+    if (options.autoCreatePr) {
+      updates.scanConfig = { ...(updates.scanConfig || {}), autoCreatePr: options.autoCreatePr === 'true' };
     }
     if (options.autoPrThreshold) {
       updates.scanConfig = { ...(updates.scanConfig || {}), autoPrThreshold: options.autoPrThreshold };
@@ -135,7 +135,7 @@ async function update(id, options) {
     const repo = result.config || result.repository || result;
     spinner.succeed('Repository updated successfully');
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(repo, null, 2));
       return;
     }

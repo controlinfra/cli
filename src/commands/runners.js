@@ -16,7 +16,7 @@ const { resolveRunnerId } = require('./runners-setup');
 /**
  * List all runners
  */
-async function list(options) {
+async function list(options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching runners...').start();
@@ -32,7 +32,7 @@ async function list(options) {
       return;
     }
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(runnerList, null, 2));
       return;
     }
@@ -60,7 +60,7 @@ async function list(options) {
 /**
  * Create a new runner
  */
-async function add(name, options) {
+async function add(name, options, command) {
   requireAuth();
 
   const runnerName = name || 'my-runner';
@@ -75,7 +75,7 @@ async function add(name, options) {
     const runner = data.runner || data;
     spinner.succeed(`Runner "${brand.cyan(runner.name)}" created`);
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(runner, null, 2));
       return;
     }
@@ -105,7 +105,7 @@ async function add(name, options) {
 /**
  * Check runner status
  */
-async function status(runnerId, options) {
+async function status(runnerId, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching runner status...').start();
@@ -122,7 +122,7 @@ async function status(runnerId, options) {
     const runner = data.runner || data;
     spinner.stop();
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(runner, null, 2));
       return;
     }
@@ -197,7 +197,7 @@ async function remove(runnerId, options) {
 /**
  * Regenerate runner token
  */
-async function regenerateToken(runnerId, options) {
+async function regenerateToken(runnerId, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Regenerating token...').start();
@@ -213,7 +213,7 @@ async function regenerateToken(runnerId, options) {
     const data = await runners.regenerateToken(fullId);
     spinner.succeed('Token regenerated');
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(data, null, 2));
       return;
     }

@@ -50,7 +50,7 @@ async function resolveScanId(partialId) {
 /**
  * Check scan status
  */
-async function status(scanId, options) {
+async function status(scanId, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching scan status...').start();
@@ -67,7 +67,7 @@ async function status(scanId, options) {
     const scan = data.scan || data.data || data;
     spinner.stop();
 
-    if (getGlobalJsonFlag(options)) {
+    if (getGlobalJsonFlag(command)) {
       console.log(JSON.stringify(scan, null, 2));
       return;
     }

@@ -73,7 +73,7 @@ async function list(options, command) {
 /**
  * Show drift details
  */
-async function show(driftId, options) {
+async function show(driftId, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching drift details...').start();
@@ -83,7 +83,7 @@ async function show(driftId, options) {
     const drift = data.drift || data;
     spinner.stop();
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(drift, null, 2));
       return;
     }
@@ -132,7 +132,7 @@ async function show(driftId, options) {
 /**
  * Generate AI fix for drift
  */
-async function fix(driftId, options) {
+async function fix(driftId, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Generating fix with AI...').start();
@@ -146,7 +146,7 @@ async function fix(driftId, options) {
 
     const drift = data.drift || data;
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(data, null, 2));
       return;
     }
@@ -168,7 +168,7 @@ async function fix(driftId, options) {
 /**
  * Create PR with fix
  */
-async function createPR(driftId, options) {
+async function createPR(driftId, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Creating pull request...').start();
@@ -180,7 +180,7 @@ async function createPR(driftId, options) {
 
     spinner.succeed('Pull request created');
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(data, null, 2));
       return;
     }

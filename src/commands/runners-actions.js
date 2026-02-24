@@ -7,7 +7,7 @@ const { resolveRunnerId } = require('./runners-setup');
 /**
  * Update runner configuration
  */
-async function update(runnerId, options) {
+async function update(runnerId, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Updating runner...').start();
@@ -37,7 +37,7 @@ async function update(runnerId, options) {
     const runner = data.runner || data;
     spinner.succeed('Runner updated successfully');
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(runner, null, 2));
       return;
     }

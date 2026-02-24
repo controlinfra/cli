@@ -8,7 +8,7 @@ const { setup } = require('./gcp-setup');
 /**
  * Show GCP credentials status
  */
-async function status(options) {
+async function status(options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching GCP status...').start();
@@ -17,7 +17,7 @@ async function status(options) {
     const data = await integrations.getGcpCredentials();
     spinner.stop();
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(data, null, 2));
       return;
     }
@@ -36,7 +36,7 @@ async function status(options) {
         lines.push(`Service Account: ${chalk.dim(data.credentials.clientEmail)}`);
       }
       if (data.credentials.hasPrivateKey) {
-        lines.push(`Private Key:     ${chalk.dim('        ')}`);
+        lines.push(`Private Key:     ${chalk.dim('[set]')}`);
       }
 
       outputBox('GCP Credentials', lines.join('\n'));

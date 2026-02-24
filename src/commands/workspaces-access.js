@@ -33,7 +33,7 @@ async function resolveWorkspaceId(partialId) {
 /**
  * List workspace access
  */
-async function access(id, options) {
+async function access(id, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching workspace access...').start();
@@ -50,7 +50,7 @@ async function access(id, options) {
     const members = data.members || data.access || data || [];
     spinner.stop();
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(members, null, 2));
       return;
     }

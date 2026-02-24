@@ -119,7 +119,7 @@ async function add(name, options) {
 /**
  * Get workspace details
  */
-async function info(id, options) {
+async function info(id, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching workspace info...').start();
@@ -136,7 +136,7 @@ async function info(id, options) {
     const ws = data.workspace || data;
     spinner.stop();
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(ws, null, 2));
       return;
     }
@@ -160,7 +160,7 @@ async function info(id, options) {
 /**
  * Update a workspace
  */
-async function update(id, options) {
+async function update(id, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Updating workspace...').start();
@@ -186,7 +186,7 @@ async function update(id, options) {
     const ws = data.workspace || data;
     spinner.succeed('Workspace updated');
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(ws, null, 2));
     }
   } catch (error) {

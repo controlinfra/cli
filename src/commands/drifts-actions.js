@@ -12,7 +12,7 @@ const {
 /**
  * Show drift statistics
  */
-async function stats(options) {
+async function stats(options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching statistics...').start();
@@ -44,7 +44,7 @@ async function stats(options) {
 
     spinner.stop();
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(data, null, 2));
       return;
     }

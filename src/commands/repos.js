@@ -124,7 +124,7 @@ async function remove(id, options) {
 /**
  * Show repository details
  */
-async function info(id, options) {
+async function info(id, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching repository info...').start();
@@ -141,7 +141,7 @@ async function info(id, options) {
     const repo = data.repository || data.config || data;
     spinner.stop();
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(repo, null, 2));
       return;
     }
@@ -167,7 +167,7 @@ async function info(id, options) {
 /**
  * Show repository statistics
  */
-async function stats(id, options) {
+async function stats(id, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching statistics...').start();
@@ -183,7 +183,7 @@ async function stats(id, options) {
     const data = await repos.getStats(fullId);
     spinner.stop();
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(data, null, 2));
       return;
     }

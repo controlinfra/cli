@@ -55,6 +55,31 @@ describe('CLI Drift Commands', () => {
       expect(stdout).toContain('show');
       expect(stdout).toContain('fix');
     });
+
+    it('should display reanalyze subcommand in help', () => {
+      const { stdout, exitCode } = runCLI('drifts --help');
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('reanalyze');
+    });
+
+    it('should display export subcommand in help', () => {
+      const { stdout, exitCode } = runCLI('drifts --help');
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('export');
+    });
+  });
+
+  describe('drifts export help', () => {
+    it('should display export help with options', () => {
+      const { stdout, exitCode } = runCLI('drifts export --help');
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('--repo');
+      expect(stdout).toContain('--status');
+      expect(stdout).toContain('--output');
+    });
   });
 
   describe('drifts show', () => {

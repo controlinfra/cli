@@ -12,7 +12,7 @@ const {
 /**
  * List CLI tokens
  */
-async function list(options) {
+async function list(options, command) {
   requireAuth();
 
   const spinner = createSpinner('Fetching tokens...').start();
@@ -22,7 +22,7 @@ async function list(options) {
     const tokenList = data.tokens || data || [];
     spinner.stop();
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(tokenList, null, 2));
       return;
     }
@@ -57,7 +57,7 @@ async function list(options) {
 /**
  * Create a new CLI token
  */
-async function create(name, options) {
+async function create(name, options, command) {
   requireAuth();
 
   const spinner = createSpinner('Creating token...').start();
@@ -75,7 +75,7 @@ async function create(name, options) {
     const token = data.token || data;
     spinner.succeed(`Token "${brand.cyan(name)}" created`);
 
-    if (options?.parent?.parent?.opts()?.json) {
+    if (command?.parent?.parent?.opts()?.json) {
       console.log(JSON.stringify(data, null, 2));
       return;
     }
