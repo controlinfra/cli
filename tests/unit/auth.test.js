@@ -42,6 +42,10 @@ jest.mock('../../src/output', () => ({
   outputBox: jest.fn(),
 }));
 
+jest.mock('../../src/banner', () => ({
+  gradientBanner: jest.fn(),
+}));
+
 jest.mock('../../src/utils/browser-detect', () => ({
   canOpenBrowser: jest.fn(),
 }));
