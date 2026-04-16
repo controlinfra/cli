@@ -224,4 +224,80 @@ async function resolveOrgId(partialId) {
   return null;
 }
 
-module.exports = { list, create, info, update, deleteOrg, resolveOrgId };
+/**
+ * Switch active organization
+ */
+async function switchOrg(idOrName, _options) {
+  requireAuth();
+
+  const spinner = createSpinner('Switching organization...').start();
+
+  try {
+    const data = await orgs.list();
+    const orgList = data.organizations || data.orgs || data || [];
+
+    if (orgList.length === 0) {
+      spinner.fail('No organizations found');
+      process.exit(1);
+    }
+
+    const displayOrg = (o) => {
+      const name = o.name || '-';
+      const id = (o.id || o._id) ? (o.id || o._id).slice(-8) : '-';
+      return { name, id };
+    };
+
+    let target;
+
+    if (idOrName) {
+      // Collect all matches to detect ambiguity
+      const matches = orgList.filter((o) => {
+        const oid = o.id || o._id || '';
+        const name = (o.name || '').toLowerCase();
+        return oid === idOrName || oid.endsWith(idOrName) || name === idOrName.toLowerCase();
+      });
+      if (matches.length === 1) {
+        target = matches[0];
+      } else if (matches.length > 1) {
+        spinner.fail('Ambiguous match');
+        outputError(`Multiple organizations match "${idOrName}". Be more specific:`);
+        matches.forEach((o) => { const d = displayOrg(o); console.log(`  ${brand.cyan(d.name)} ${chalk.dim(`(${d.id})`)}`); });
+        console.log();
+        process.exit(1);
+      } else {
+        spinner.fail('Organization not found');
+        outputError(`No organization matching "${idOrName}"`);
+        console.log(chalk.dim('\nAvailable organizations:'));
+        orgList.forEach((o) => { const d = displayOrg(o); console.log(`  ${brand.cyan(d.name)} ${chalk.dim(`(${d.id})`)}`); });
+        console.log();
+        process.exit(1);
+      }
+    } else {
+      // Interactive picker
+      spinner.stop();
+      const choices = orgList.map((o) => {
+        const d = displayOrg(o);
+        return { name: `${d.name} ${chalk.dim(`(${d.id})`)}`, value: o };
+      });
+      const answer = await inquirer.prompt([{
+        type: 'list',
+        name: 'org',
+        message: 'Select an organization:',
+        choices,
+      }]);
+      target = answer.org;
+    }
+
+    const { config: cliConfig } = require('../config');
+    cliConfig.set('orgId', target.id || target._id);
+    if (spinner.isSpinning) spinner.succeed(`Switched to ${brand.cyan(target.name)}`);
+    else console.log(`\n${brand.cyan('✔')} Switched to ${brand.cyan(target.name)}`);
+    console.log(chalk.dim(`  Org ID: ${target.id || target._id}\n`));
+  } catch (error) {
+    spinner.fail('Failed to switch organization');
+    outputError(error.message);
+    process.exit(1);
+  }
+}
+
+module.exports = { list, create, info, update, deleteOrg, resolveOrgId, switchOrg };

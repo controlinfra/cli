@@ -1,102 +1,27 @@
 const chalk = require('chalk');
 const { brand } = require('./output');
 
-// Raw hex values from shared brand palette
-const GRADIENT_START = brand.hex.purple;
-const GRADIENT_END = brand.hex.cyan;
-const SHADOW_COLOR = brand.hex.shadow;
-
-// Uppercase block font — 6 rows tall, 5 chars wide (I: 4 wide)
-const font = {
-  C: [' ███ ', '██   ', '██   ', '██   ', '██   ', ' ███ '],
-  O: [' ███ ', '██ ██', '██ ██', '██ ██', '██ ██', ' ███ '],
-  N: ['██ ██', '███ █', '█████', '█ ███', '██ ██', '██ ██'],
-  T: ['█████', ' ██  ', ' ██  ', ' ██  ', ' ██  ', ' ██  '],
-  R: ['████ ', '██ ██', '████ ', '███  ', '██ █ ', '██ ██'],
-  L: ['██   ', '██   ', '██   ', '██   ', '██   ', '█████'],
-  I: ['████', ' ██ ', ' ██ ', ' ██ ', ' ██ ', '████'],
-  F: ['█████', '██   ', '████ ', '██   ', '██   ', '██   '],
-  A: [' ███ ', '██ ██', '█████', '██ ██', '██ ██', '██ ██'],
-};
-
-// Row brightness: top-lit 3D effect (bright top → darker bottom)
-const ROW_BRIGHTNESS = [1.2, 1.1, 1.0, 0.9, 0.8, 0.7];
-
-// Interpolate between two hex colors
-function lerpColor(hex1, hex2, t) {
-  const r1 = parseInt(hex1.slice(1, 3), 16);
-  const g1 = parseInt(hex1.slice(3, 5), 16);
-  const b1 = parseInt(hex1.slice(5, 7), 16);
-  const r2 = parseInt(hex2.slice(1, 3), 16);
-  const g2 = parseInt(hex2.slice(3, 5), 16);
-  const b2 = parseInt(hex2.slice(5, 7), 16);
-  const r = Math.round(r1 + (r2 - r1) * t);
-  const g = Math.round(g1 + (g2 - g1) * t);
-  const b = Math.round(b1 + (b2 - b1) * t);
-  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
-}
-
-// Apply brightness multiplier to a hex color
-function applyBrightness(hex, bright) {
-  const rr = Math.min(255, Math.round(parseInt(hex.slice(1, 3), 16) * bright));
-  const gg = Math.min(255, Math.round(parseInt(hex.slice(3, 5), 16) * bright));
-  const bb = Math.min(255, Math.round(parseInt(hex.slice(5, 7), 16) * bright));
-  return '#' + [rr, gg, bb].map(v => v.toString(16).padStart(2, '0')).join('');
-}
+const PURPLE = brand.hex.purple;
+const CYAN = brand.hex.cyan;
 
 /**
- * Render the "CONTROLINFRA" block-letter banner with 3D gradient
- * - Horizontal brand gradient (purple → cyan)
- * - Vertical brightness (bright top → dark bottom) for 3D depth
- * - Half-block shadow row at bottom
+ * Render the "CONTROLINFRA" calligraphy-style banner
+ * Matches the runner install script banner exactly.
  */
 function gradientBanner() {
-  const word = 'CONTROLINFRA';
+  const purple = chalk.hex(PURPLE);
+  const cyan = chalk.hex(CYAN);
+  const dim = chalk.dim;
 
-  // Build each row by composing letter glyphs
-  const rows = [];
-  for (let r = 0; r < 6; r++) {
-    let line = '';
-    for (let ci = 0; ci < word.length; ci++) {
-      if (ci > 0) line += ' ';
-      line += font[word[ci]][r];
-    }
-    rows.push(line);
-  }
-
-  const width = rows[0].length;
-
-  // Precompute per-column base gradient colors
-  const columnColors = [];
-  for (let j = 0; j < width; j++) {
-    const t = width > 1 ? j / (width - 1) : 0;
-    columnColors.push(lerpColor(GRADIENT_START, GRADIENT_END, t));
-  }
-
-  // Precompute per-row, per-column chalk styles
-  const styles = ROW_BRIGHTNESS.map((bright) =>
-    columnColors.map((base) => chalk.hex(applyBrightness(base, bright))),
-  );
-
-  const shadowStyle = chalk.hex(SHADOW_COLOR);
-
-  // Render with precomputed styles
   console.log();
-  rows.forEach((line, ri) => {
-    let colored = '  ';
-    for (let j = 0; j < line.length; j++) {
-      colored += line[j] !== ' ' ? styles[ri][j]('█') : ' ';
-    }
-    console.log(colored);
-  });
-
-  // Half-block shadow row for ground depth
-  const lastRow = rows[5];
-  let shadow = '  ';
-  for (let j = 0; j < lastRow.length; j++) {
-    shadow += lastRow[j] !== ' ' ? shadowStyle('▀') : ' ';
-  }
-  console.log(shadow);
+  console.log(purple('  ██████╗ ██████╗ ███╗   ██╗████████╗██████╗  ██████╗ ██╗     ██╗███╗   ██╗███████╗██████╗  █████╗ '));
+  console.log(purple(' ██╔════╝██╔═══██╗████╗  ██║╚══██╔══╝██╔══██╗██╔═══██╗██║     ██║████╗  ██║██╔════╝██╔══██╗██╔══██╗'));
+  console.log(cyan('  ██║     ██║   ██║██╔██╗ ██║   ██║   ██████╔╝██║   ██║██║     ██║██╔██╗ ██║█████╗  ██████╔╝███████║'));
+  console.log(cyan('  ██║     ██║   ██║██║╚██╗██║   ██║   ██╔══██╗██║   ██║██║     ██║██║╚██╗██║██╔══╝  ██╔══██╗██╔══██║'));
+  console.log(purple(' ╚██████╗╚██████╔╝██║ ╚████║   ██║   ██║  ██║╚██████╔╝███████╗██║██║ ╚████║██║     ██║  ██║██║  ██║'));
+  console.log(purple('  ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝╚═╝  ╚═══╝╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝'));
+  console.log(dim('  infrastructure control platform'));
+  console.log();
 }
 
 module.exports = { gradientBanner };
