@@ -7,7 +7,7 @@ const { runCLI, itAuthenticated } = require('./helpers');
 
 describe('CLI Slack Commands', () => {
   itAuthenticated('slack status — should show webhook info or not configured', () => {
-    const { stdout, stderr, exitCode } = runCLI('slack status', { expectError: true });
+    const { stdout, stderr } = runCLI('slack status', { expectError: true });
     const output = (stdout + stderr).toLowerCase();
     expect(output).toMatch(/slack|webhook|not configured|configured|status|denied|permission/);
   });
