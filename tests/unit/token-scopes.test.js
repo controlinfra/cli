@@ -51,18 +51,19 @@ const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
   throw new Error('process.exit called');
 });
 
-// ── Valid scopes (mirrors server VALID_TOKEN_SCOPES) ─────────────────────
-const VALID_SCOPES = [
-  'repos:read', 'repos:write',
-  'scans:read', 'scans:trigger',
-  'drifts:read', 'drifts:write',
-  'runners:read', 'runners:manage',
-  'drift-watch:read', 'drift-watch:write',
-  'guardrails:read', 'guardrails:write',
-  'discovery:read', 'discovery:write',
-  'notifications:read',
-  'workspaces:read', 'workspaces:write',
-];
+// ── Import scopes from server source of truth (monorepo) or use known list (standalone) ──
+let VALID_SCOPES;
+try {
+  VALID_SCOPES = require('../../../server/controllers/auth.controller/cli-tokens').VALID_TOKEN_SCOPES;
+} catch {
+  VALID_SCOPES = [
+    'repos:read', 'repos:write', 'scans:read', 'scans:trigger',
+    'drifts:read', 'drifts:write', 'runners:read', 'runners:manage',
+    'drift-watch:read', 'drift-watch:write', 'guardrails:read', 'guardrails:write',
+    'discovery:read', 'discovery:write', 'notifications:read',
+    'workspaces:read', 'workspaces:write',
+  ];
+}
 
 const DEFAULT_CI_SCOPES = ['repos:read', 'scans:read', 'scans:trigger', 'drifts:read'];
 
