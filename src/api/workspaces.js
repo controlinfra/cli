@@ -37,17 +37,17 @@ const workspaces = {
   },
 
   async addAccess(workspaceId, userId, role) {
-    const { data } = await getClient().post(`/api/workspaces/${workspaceId}/access`, { userId, role });
+    const { data } = await getClient().post(`/api/workspaces/${workspaceId}/access/members`, { userId, role });
     return data;
   },
 
   async removeAccess(workspaceId, userId) {
-    const { data } = await getClient().delete(`/api/workspaces/${workspaceId}/access/${userId}`);
+    const { data } = await getClient().delete(`/api/workspaces/${workspaceId}/access/members/${userId}`);
     return data;
   },
 
   async setVisibility(workspaceId, visibility) {
-    const { data } = await getClient().put(`/api/workspaces/${workspaceId}/visibility`, { visibility });
+    const { data } = await getClient().put(`/api/workspaces/${workspaceId}/access`, { visibility });
     return data;
   },
 };

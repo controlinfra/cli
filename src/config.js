@@ -27,9 +27,13 @@ const config = new Conf({
         displayName: { type: 'string' },
         avatar: { type: 'string' },
         role: { type: 'string' },
+        defaultOrgId: { type: 'string' },
       },
     },
     defaultWorkspace: {
+      type: 'string',
+    },
+    orgId: {
       type: 'string',
     },
     outputFormat: {

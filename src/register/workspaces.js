@@ -68,7 +68,7 @@ function registerWorkspaces(program) {
 
   ws
     .command('visibility <id> <visibility>')
-    .description('Set workspace visibility (private, team)')
+    .description('Set workspace visibility (org-wide, restricted)')
     .action(workspaceAccessCommands.setVisibility);
 }
 
