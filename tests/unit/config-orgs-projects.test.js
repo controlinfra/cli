@@ -142,6 +142,22 @@ describe('orgs switchOrg', () => {
     await switchOrg('abc-123');
     expect(mockCliConfig.set).toHaveBeenCalledWith('orgId', 'org-abc-123');
   });
+  it('should switch via interactive picker when no argument', async () => {
+    const orgData = { _id: 'org-picked', name: 'Picked Org' };
+    api.orgs.list.mockResolvedValue({ organizations: [orgData, { _id: 'org-2', name: 'Other' }] });
+    inquirer.prompt.mockResolvedValue({ org: orgData });
+    await switchOrg(undefined);
+    expect(inquirer.prompt).toHaveBeenCalled();
+    expect(mockCliConfig.set).toHaveBeenCalledWith('orgId', 'org-picked');
+  });
+  it('should exit 1 on ambiguous match', async () => {
+    api.orgs.list.mockResolvedValue({ organizations: [
+      { _id: 'org-abc-123', name: 'Team' },
+      { _id: 'org-abc-456', name: 'Team' },
+    ]});
+    await expect(switchOrg('Team')).rejects.toThrow('process.exit called');
+    expect(output.outputError).toHaveBeenCalledWith(expect.stringContaining('Multiple'));
+  });
   it('should exit 1 when org not found', async () => {
     api.orgs.list.mockResolvedValue({ organizations: [{ _id: 'org-1', name: 'Test' }] });
     await expect(switchOrg('nonexistent')).rejects.toThrow('process.exit called');

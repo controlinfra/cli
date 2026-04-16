@@ -241,30 +241,44 @@ async function switchOrg(idOrName, _options) {
       process.exit(1);
     }
 
+    const displayOrg = (o) => {
+      const name = o.name || '-';
+      const id = (o.id || o._id) ? (o.id || o._id).slice(-8) : '-';
+      return { name, id };
+    };
+
     let target;
 
     if (idOrName) {
-      // Match by ID (full or partial) or name (case-insensitive)
-      target = orgList.find((o) => {
+      // Collect all matches to detect ambiguity
+      const matches = orgList.filter((o) => {
         const oid = o.id || o._id || '';
         const name = (o.name || '').toLowerCase();
         return oid === idOrName || oid.endsWith(idOrName) || name === idOrName.toLowerCase();
       });
-      if (!target) {
+      if (matches.length === 1) {
+        target = matches[0];
+      } else if (matches.length > 1) {
+        spinner.fail('Ambiguous match');
+        outputError(`Multiple organizations match "${idOrName}". Be more specific:`);
+        matches.forEach((o) => { const d = displayOrg(o); console.log(`  ${brand.cyan(d.name)} ${chalk.dim(`(${d.id})`)}`); });
+        console.log();
+        process.exit(1);
+      } else {
         spinner.fail('Organization not found');
         outputError(`No organization matching "${idOrName}"`);
         console.log(chalk.dim('\nAvailable organizations:'));
-        orgList.forEach((o) => console.log(`  ${brand.cyan(o.name)} ${chalk.dim(`(${(o.id || o._id)?.slice(-8)})`)}`));
+        orgList.forEach((o) => { const d = displayOrg(o); console.log(`  ${brand.cyan(d.name)} ${chalk.dim(`(${d.id})`)}`); });
         console.log();
         process.exit(1);
       }
     } else {
       // Interactive picker
       spinner.stop();
-      const choices = orgList.map((o) => ({
-        name: `${o.name} ${chalk.dim(`(${(o.id || o._id)?.slice(-8)})`)}`,
-        value: o,
-      }));
+      const choices = orgList.map((o) => {
+        const d = displayOrg(o);
+        return { name: `${d.name} ${chalk.dim(`(${d.id})`)}`, value: o };
+      });
       const answer = await inquirer.prompt([{
         type: 'list',
         name: 'org',

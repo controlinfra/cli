@@ -120,33 +120,30 @@ describe('Organization switch', () => {
   });
 
   itAuthenticated('orgs switch by name should succeed', () => {
-    // Get first org name from list
     const { stdout } = runCLI('orgs list --json', { expectError: true });
-    if (!stdout) return;
+    expect(stdout).toBeTruthy();
     let orgList;
     try { orgList = JSON.parse(stdout.replace(/^[^[{]*/, '')); } catch { return; }
-    const orgs = orgList.organizations || orgList.orgs || orgList || [];
-    if (orgs.length === 0) return;
+    const orgArr = orgList.organizations || orgList.orgs || orgList || [];
+    if (orgArr.length === 0) return;
 
-    const targetName = orgs[0].name;
-    const { exitCode, stdout: switchOut } = runCLI(`orgs switch "${targetName}"`, { expectError: true });
-    if (exitCode === 0) {
-      expect(switchOut).toMatch(/switched/i);
-    }
+    const targetName = orgArr[0].name;
+    const { exitCode } = runCLI(`orgs switch "${targetName}"`, { expectError: true });
+    expect(exitCode).toBe(0);
   });
 
   itAuthenticated('orgs switch by partial ID should succeed', () => {
     const { stdout } = runCLI('orgs list --json', { expectError: true });
-    if (!stdout) return;
+    expect(stdout).toBeTruthy();
     let orgList;
     try { orgList = JSON.parse(stdout.replace(/^[^[{]*/, '')); } catch { return; }
-    const orgs = orgList.organizations || orgList.orgs || orgList || [];
-    if (orgs.length === 0) return;
+    const orgArr = orgList.organizations || orgList.orgs || orgList || [];
+    if (orgArr.length === 0) return;
 
-    const fullId = orgs[0]._id || orgs[0].id;
+    const fullId = orgArr[0]._id || orgArr[0].id;
     const partialId = fullId.slice(-8);
     const { exitCode } = runCLI(`orgs switch ${partialId}`, { expectError: true });
-    expect([0, 1]).toContain(exitCode);
+    expect(exitCode).toBe(0);
   });
 
   itAuthenticated('orgs switch with invalid name should fail', () => {
