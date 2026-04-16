@@ -13,11 +13,13 @@ jest.mock('../../src/api', () => ({
   },
 }));
 
+const mockCliConfig = { set: jest.fn(), get: jest.fn() };
 jest.mock('../../src/config', () => ({
   requireAuth: jest.fn(), saveAuth: jest.fn(), getUser: jest.fn(), isAuthenticated: jest.fn(),
   getApiUrl: jest.fn(() => 'https://api.controlinfra.com'),
   getConfigPath: jest.fn(() => '/mock/config/path'),
   setConfig: jest.fn(), getConfig: jest.fn(), clearConfig: jest.fn(),
+  config: mockCliConfig,
 }));
 
 const mockSpinner = { start: jest.fn().mockReturnThis(), stop: jest.fn(), succeed: jest.fn(), fail: jest.fn(), warn: jest.fn() };
@@ -37,7 +39,7 @@ jest.mock('inquirer', () => ({ prompt: jest.fn() }));
 const api = require('../../src/api');
 const output = require('../../src/output');
 const inquirer = require('inquirer');
-const { create: createOrg, update: updateOrg, deleteOrg, resolveOrgId } = require('../../src/commands/orgs');
+const { create: createOrg, update: updateOrg, deleteOrg, resolveOrgId, switchOrg } = require('../../src/commands/orgs');
 const { invite, inviteLink, revoke, removeMember, updateRole, leave, transfer, accept } = require('../../src/commands/orgs-members');
 const { create: createProject, update: updateProject, deleteProject, setDefault } = require('../../src/commands/projects');
 
@@ -118,6 +120,36 @@ describe('resolveOrgId', () => {
   it('should return null when no match', async () => {
     api.orgs.list.mockResolvedValue({ organizations: [] });
     expect(await resolveOrgId('missing')).toBeNull();
+  });
+});
+
+// ── Orgs Switch ──
+
+describe('orgs switchOrg', () => {
+  beforeEach(() => jest.clearAllMocks());
+  it('should switch by name', async () => {
+    api.orgs.list.mockResolvedValue({ organizations: [
+      { _id: 'org-1', name: 'My Org' },
+      { _id: 'org-2', name: 'Other Org' },
+    ]});
+    await switchOrg('My Org');
+    expect(mockCliConfig.set).toHaveBeenCalledWith('orgId', 'org-1');
+  });
+  it('should switch by partial ID', async () => {
+    api.orgs.list.mockResolvedValue({ organizations: [
+      { _id: 'org-abc-123', name: 'Test' },
+    ]});
+    await switchOrg('abc-123');
+    expect(mockCliConfig.set).toHaveBeenCalledWith('orgId', 'org-abc-123');
+  });
+  it('should exit 1 when org not found', async () => {
+    api.orgs.list.mockResolvedValue({ organizations: [{ _id: 'org-1', name: 'Test' }] });
+    await expect(switchOrg('nonexistent')).rejects.toThrow('process.exit called');
+    expect(output.outputError).toHaveBeenCalledWith(expect.stringContaining('nonexistent'));
+  });
+  it('should exit 1 on API error', async () => {
+    api.orgs.list.mockRejectedValue(new Error('Network error'));
+    await expect(switchOrg('test')).rejects.toThrow('process.exit called');
   });
 });
 

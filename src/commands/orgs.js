@@ -224,4 +224,66 @@ async function resolveOrgId(partialId) {
   return null;
 }
 
-module.exports = { list, create, info, update, deleteOrg, resolveOrgId };
+/**
+ * Switch active organization
+ */
+async function switchOrg(idOrName, _options) {
+  requireAuth();
+
+  const spinner = createSpinner('Switching organization...').start();
+
+  try {
+    const data = await orgs.list();
+    const orgList = data.organizations || data.orgs || data || [];
+
+    if (orgList.length === 0) {
+      spinner.fail('No organizations found');
+      process.exit(1);
+    }
+
+    let target;
+
+    if (idOrName) {
+      // Match by ID (full or partial) or name (case-insensitive)
+      target = orgList.find((o) => {
+        const oid = o.id || o._id || '';
+        const name = (o.name || '').toLowerCase();
+        return oid === idOrName || oid.endsWith(idOrName) || name === idOrName.toLowerCase();
+      });
+      if (!target) {
+        spinner.fail('Organization not found');
+        outputError(`No organization matching "${idOrName}"`);
+        console.log(chalk.dim('\nAvailable organizations:'));
+        orgList.forEach((o) => console.log(`  ${brand.cyan(o.name)} ${chalk.dim(`(${(o.id || o._id)?.slice(-8)})`)}`));
+        console.log();
+        process.exit(1);
+      }
+    } else {
+      // Interactive picker
+      spinner.stop();
+      const choices = orgList.map((o) => ({
+        name: `${o.name} ${chalk.dim(`(${(o.id || o._id)?.slice(-8)})`)}`,
+        value: o,
+      }));
+      const answer = await inquirer.prompt([{
+        type: 'list',
+        name: 'org',
+        message: 'Select an organization:',
+        choices,
+      }]);
+      target = answer.org;
+    }
+
+    const { config: cliConfig } = require('../config');
+    cliConfig.set('orgId', target.id || target._id);
+    if (spinner.isSpinning) spinner.succeed(`Switched to ${brand.cyan(target.name)}`);
+    else console.log(`\n${brand.cyan('✔')} Switched to ${brand.cyan(target.name)}`);
+    console.log(chalk.dim(`  Org ID: ${target.id || target._id}\n`));
+  } catch (error) {
+    spinner.fail('Failed to switch organization');
+    outputError(error.message);
+    process.exit(1);
+  }
+}
+
+module.exports = { list, create, info, update, deleteOrg, resolveOrgId, switchOrg };

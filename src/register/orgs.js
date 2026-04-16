@@ -11,6 +11,11 @@ function registerOrgs(program) {
     .action(orgCommands.list);
 
   orgs
+    .command('switch [id-or-name]')
+    .description('Switch active organization')
+    .action(orgCommands.switchOrg);
+
+  orgs
     .command('create <name>')
     .description('Create a new organization')
     .action(orgCommands.create);

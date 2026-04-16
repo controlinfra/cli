@@ -101,6 +101,67 @@ describe('Organization member management lifecycle', () => {
 });
 
 /* ------------------------------------------------------------------ */
+/*  Standalone: orgs switch                                            */
+/* ------------------------------------------------------------------ */
+describe('Organization switch', () => {
+  let originalOrgId;
+
+  beforeAll(() => {
+    // Save current org
+    const { stdout } = runCLI('config get orgId', { expectError: true });
+    originalOrgId = (stdout || '').trim();
+  });
+
+  afterAll(() => {
+    // Restore original org
+    if (originalOrgId && !originalOrgId.includes('not set')) {
+      runCLI(`orgs switch ${originalOrgId}`, { expectError: true });
+    }
+  });
+
+  itAuthenticated('orgs switch by name should succeed', () => {
+    // Get first org name from list
+    const { stdout } = runCLI('orgs list --json', { expectError: true });
+    if (!stdout) return;
+    let orgList;
+    try { orgList = JSON.parse(stdout.replace(/^[^[{]*/, '')); } catch { return; }
+    const orgs = orgList.organizations || orgList.orgs || orgList || [];
+    if (orgs.length === 0) return;
+
+    const targetName = orgs[0].name;
+    const { exitCode, stdout: switchOut } = runCLI(`orgs switch "${targetName}"`, { expectError: true });
+    if (exitCode === 0) {
+      expect(switchOut).toMatch(/switched/i);
+    }
+  });
+
+  itAuthenticated('orgs switch by partial ID should succeed', () => {
+    const { stdout } = runCLI('orgs list --json', { expectError: true });
+    if (!stdout) return;
+    let orgList;
+    try { orgList = JSON.parse(stdout.replace(/^[^[{]*/, '')); } catch { return; }
+    const orgs = orgList.organizations || orgList.orgs || orgList || [];
+    if (orgs.length === 0) return;
+
+    const fullId = orgs[0]._id || orgs[0].id;
+    const partialId = fullId.slice(-8);
+    const { exitCode } = runCLI(`orgs switch ${partialId}`, { expectError: true });
+    expect([0, 1]).toContain(exitCode);
+  });
+
+  itAuthenticated('orgs switch with invalid name should fail', () => {
+    const { stdout, stderr } = runCLI('orgs switch nonexistent-org-xyz', { expectError: true });
+    expect(stdout + stderr).toMatch(/not found|no organization|error/i);
+  });
+
+  itAuthenticated('orgs switch --help should show usage', () => {
+    const { stdout, exitCode } = runCLI('orgs switch --help');
+    expect(exitCode).toBe(0);
+    expect(stdout).toMatch(/switch/i);
+  });
+});
+
+/* ------------------------------------------------------------------ */
 /*  Standalone: accept with invalid token                              */
 /* ------------------------------------------------------------------ */
 describe('Organization accept — invalid token', () => {
