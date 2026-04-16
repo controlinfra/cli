@@ -114,8 +114,8 @@ async function removeAccess(id, userId, _options) {
 async function setVisibility(id, visibility, _options) {
   requireAuth();
 
-  if (!['private', 'team'].includes(visibility)) {
-    outputError('Invalid visibility. Must be: private or team');
+  if (!['org-wide', 'restricted'].includes(visibility)) {
+    outputError('Invalid visibility. Must be: org-wide or restricted');
     process.exit(1);
   }
 

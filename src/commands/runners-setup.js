@@ -21,6 +21,15 @@ async function resolveRunnerId(partialId) {
   );
   if (nameMatch) return nameMatch.id || nameMatch._id;
 
+  // List only returns online runners — try direct get for pending/offline
+  if (partialId.length >= 24) {
+    try {
+      const runner = await runners.get(partialId);
+      const r = runner.runner || runner;
+      return r.id || r._id || null;
+    } catch { /* not found */ }
+  }
+
   return null;
 }
 

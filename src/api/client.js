@@ -14,11 +14,18 @@ const createClient = () => {
     },
   });
 
-  // Add auth token to requests
+  // Add auth token and org context to requests
   client.interceptors.request.use((config) => {
     const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Send org context so server scopes resources correctly
+    const { getUser, config: cliConfig } = require('../config');
+    const user = getUser();
+    const orgId = process.env.CONTROLINFRA_ORG_ID || cliConfig.get('orgId') || user?.defaultOrgId;
+    if (orgId) {
+      config.headers['X-Org-Id'] = orgId;
     }
     return config;
   });

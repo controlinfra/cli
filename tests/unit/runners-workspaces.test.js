@@ -276,11 +276,11 @@ describe('workspaces removeAccess', () => {
 
 describe('workspaces setVisibility', () => {
   beforeEach(() => jest.clearAllMocks());
-  it('sets visibility to team', async () => {
+  it('sets visibility to org-wide', async () => {
     api.workspaces.list.mockResolvedValue(wList);
     api.workspaces.setVisibility.mockResolvedValue({});
-    await setVisibility('ws1', 'team');
-    expect(api.workspaces.setVisibility).toHaveBeenCalledWith('ws1', 'team');
+    await setVisibility('ws1', 'org-wide');
+    expect(api.workspaces.setVisibility).toHaveBeenCalledWith('ws1', 'org-wide');
   });
   it('exits on invalid visibility', async () => {
     await expect(setVisibility('ws1', 'invalid')).rejects.toThrow('process.exit called');
@@ -288,6 +288,6 @@ describe('workspaces setVisibility', () => {
   });
   it('exits when not found', async () => {
     api.workspaces.list.mockResolvedValue({ workspaces: [] });
-    await expect(setVisibility('missing', 'team')).rejects.toThrow('process.exit called');
+    await expect(setVisibility('missing', 'org-wide')).rejects.toThrow('process.exit called');
   });
 });

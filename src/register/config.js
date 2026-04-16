@@ -1,5 +1,5 @@
 const chalk = require('chalk');
-const { setApiUrl, getApiUrl, getConfigPath, reset } = require('../config');
+const { config: cliConfig, setApiUrl, getApiUrl, getConfigPath, reset } = require('../config');
 const { brand } = require('../output');
 const authTokenCommands = require('../commands/auth-tokens');
 
@@ -13,9 +13,12 @@ function registerConfig(program) {
       if (key === 'apiUrl') {
         setApiUrl(value);
         console.log(brand.cyan(`  apiUrl set to ${value}`));
+      } else if (key === 'orgId') {
+        cliConfig.set('orgId', value);
+        console.log(brand.cyan(`  orgId set to ${value}`));
       } else {
         console.log(chalk.red(`  Unknown config key: ${key}`));
-        console.log(chalk.dim('  Available keys: apiUrl'));
+        console.log(chalk.dim('  Available keys: apiUrl, orgId'));
       }
     });
 
@@ -25,11 +28,13 @@ function registerConfig(program) {
     .action((key) => {
       if (key === 'apiUrl') {
         console.log(getApiUrl());
+      } else if (key === 'orgId') {
+        console.log(cliConfig.get('orgId') || chalk.dim('(not set — using default org)'));
       } else if (key === 'path') {
         console.log(getConfigPath());
       } else {
         console.log(chalk.red(`  Unknown config key: ${key}`));
-        console.log(chalk.dim('  Available keys: apiUrl, path'));
+        console.log(chalk.dim('  Available keys: apiUrl, orgId, path'));
       }
     });
 
