@@ -41,7 +41,7 @@
   "author": "Controlinfra",
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.6.0",
+    "axios": "^1.15.0",
     "chalk": "^4.1.2",
     "commander": "^11.1.0",
     "conf": "^10.2.0",
@@ -53,7 +53,7 @@
   "devDependencies": {
     "eslint": "^8.56.0",
     "jest": "^29.7.0",
-    "pkg": "^5.8.1"
+    "@yao-pkg/pkg": "^6.19.0"
   },
   "engines": {
     "node": ">=16.0.0"
