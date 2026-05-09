@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node bin/controlinfra.js",
     "dev": "node bin/controlinfra.js",
-    "lint": "eslint src --ext .js",
+    "lint": "eslint src",
     "test": "jest --testPathPattern=tests/unit",
     "test:e2e": "jest --testPathPattern=tests/e2e --runInBand",
     "test:all": "jest --runInBand",
@@ -51,7 +51,9 @@
     "cli-table3": "^0.6.3"
   },
   "devDependencies": {
-    "eslint": "^8.56.0",
+    "@eslint/js": "^9.0.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0",
     "jest": "^29.7.0",
     "@yao-pkg/pkg": "^6.19.0"
   },
