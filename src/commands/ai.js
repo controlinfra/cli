@@ -180,13 +180,13 @@ async function remove(_options) {
     // Delete both keys to be safe
     try {
       await integrations.deleteAnthropicKey();
-    } catch (e) {
+    } catch (_e) {
       // Ignore if not set
     }
 
     try {
       await integrations.deleteOpenaiKey();
-    } catch (e) {
+    } catch (_e) {
       // Ignore if not set
     }
 
