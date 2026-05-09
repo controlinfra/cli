@@ -23,7 +23,7 @@ async function login(options) {
       spinner.succeed('Logged in successfully');
       await showDashboard(userData.user || userData);
       return;
-    } catch (_error) {
+    } catch (error) {
       spinner.fail('Invalid token');
       clearAuth();
       process.exit(1);
@@ -55,7 +55,7 @@ async function login(options) {
         process.exit(1);
       }
     }
-  } catch (_error) {
+  } catch (error) {
     console.log(chalk.yellow('\n  Browser auth unavailable. Falling back to manual mode.\n'));
     await manualTokenEntry();
   }
@@ -198,7 +198,7 @@ async function logout() {
 
   try {
     await auth.logout();
-  } catch (_error) {
+  } catch (error) {
     // Ignore - clear local anyway
   }
 
@@ -250,7 +250,7 @@ async function whoami(options, command) {
         console.log(chalk.dim(`  Scans: ${quota.used || 0}/${quota.limit || 'unlimited'}`));
         console.log();
       }
-    } catch (_e) {
+    } catch (e) {
       // Ignore
     }
 
