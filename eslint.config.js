@@ -1,7 +1,7 @@
 'use strict';
 
-// Flat config for the CLI (`eslint src`). Replaces legacy
-// `cli/.eslintrc.js`. CLI runs as a Node script so we allow
+// Flat config for the CLI (`eslint src`). Replaces the legacy
+// `.eslintrc.js` at the repo root. CLI runs as a Node script so we allow
 // `console` output and use the lighter rule set the legacy config
 // already had — no need to enforce strict mode globally because
 // many files use modern import/export-style syntax (sourceType:
