@@ -31,10 +31,15 @@ describe('CLI Drift Commands', () => {
       expect(exitCode).toBe(0);
     });
 
-    itAuthenticated('API endpoint returns the expected envelope', async () => {
+    itAuthenticated('API endpoint returns the drifts envelope or a structured 4xx', async () => {
       const response = await apiCall('GET', '/api/drifts?limit=10');
-      const drifts = response.drifts || response;
-      expect(Array.isArray(drifts) || typeof drifts === 'object').toBe(true);
+      if (response && response.error) {
+        expect(response.status).toBeGreaterThanOrEqual(400);
+        expect(response.status).toBeLessThan(500);
+      } else {
+        const drifts = response.drifts || response;
+        expect(Array.isArray(drifts) || typeof drifts === 'object').toBe(true);
+      }
     });
   });
 

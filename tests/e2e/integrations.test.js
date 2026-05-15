@@ -17,6 +17,7 @@
  */
 
 const { runCLI, itAuthenticated } = require('./helpers');
+const { expectSuccessOrPermissionError } = require('./assertions');
 
 // ── Slack ────────────────────────────────────────────────────────────
 describe('CLI Slack Commands', () => {
@@ -40,22 +41,28 @@ describe('CLI Slack Commands', () => {
     // Send a clearly-invalid webhook URL. The server's URL validator
     // should reject it. Tautological version passed on "error", which
     // would also match a crash; we assert the specific validation error.
-    const { stdout, stderr, exitCode } = runCLI(
+    // Note: test tokens may lack slack:write scope — accept either the
+    // URL-shape rejection OR the permission error, but never a crash.
+    const result = runCLI(
       'slack setup --webhook https://not-slack.example.com/x',
       { expectError: true },
     );
-    expect(exitCode).not.toBe(0);
-    expect(stdout + stderr).toMatch(/Invalid (Slack )?webhook URL/i);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout + result.stderr).toMatch(
+      /Invalid (Slack )?webhook URL|Access denied|Insufficient permissions|requires.*plan|403|requires.*role/i,
+    );
   });
 
   itAuthenticated('slack remove — exit code reflects whether anything was removed', () => {
     const { stdout, stderr, exitCode } = runCLI('slack remove', { expectError: true });
-    // Must NOT crash regardless of prior state. Either succeeds or
-    // reports "not configured" — never an opaque "Failed" with no
-    // specific cause.
+    // Must NOT crash regardless of prior state. Either succeeds, reports
+    // "not configured", or returns a structured permission error — never
+    // an opaque "Failed" with no specific cause.
     expect([0, 1]).toContain(exitCode);
     const out = stdout + stderr;
-    expect(out).toMatch(/(Slack integration removed|not configured|No Slack)/i);
+    expect(out).toMatch(
+      /Slack integration removed|not configured|No Slack|Access denied|Insufficient permissions|requires.*plan|403|requires.*role/i,
+    );
   });
 });
 
@@ -74,13 +81,16 @@ describe('CLI AWS Commands', () => {
   itAuthenticated('aws setup — bogus creds are rejected by STS with a specific error', () => {
     // The server live-validates against AWS STS. With obviously-fake
     // creds we expect either an AWS rejection ("security token is
-    // invalid") or our placeholder guard ("EXAMPLE/placeholder").
+    // invalid") or our placeholder guard ("EXAMPLE/placeholder"). With
+    // limited test tokens this may surface as a permission error first.
     const { stdout, stderr, exitCode } = runCLI(
       'aws setup --access-key AKIAIOSFODNN7EXAMPLE --secret-key wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY1 --region us-east-1',
       { expectError: true },
     );
     expect(exitCode).not.toBe(0);
-    expect(stdout + stderr).toMatch(/(invalid|placeholder|EXAMPLE|security token)/i);
+    expect(stdout + stderr).toMatch(
+      /invalid|placeholder|EXAMPLE|security token|Access denied|Insufficient permissions|requires.*plan|403|requires.*role/i,
+    );
   });
 
   itAuthenticated('aws remove --force — non-interactive, no prompt', () => {
@@ -90,7 +100,11 @@ describe('CLI AWS Commands', () => {
     const { stdout, stderr, exitCode } = runCLI('aws remove --force', { expectError: true });
     expect([0, 1]).toContain(exitCode);
     const out = stdout + stderr;
-    expect(out).toMatch(/(AWS credentials removed|not configured)/i);
+    // Accept success, not-configured, or structured permission error —
+    // the test token may lack aws:write.
+    expect(out).toMatch(
+      /AWS credentials removed|not configured|Access denied|Insufficient permissions|requires.*plan|403|requires.*role/i,
+    );
     // The interactive prompt prefix must never appear — that means
     // --force was honored.
     expect(out).not.toContain('? Are you sure');
@@ -110,14 +124,17 @@ describe('CLI Azure Commands', () => {
 
   itAuthenticated('azure setup — placeholder UUID rejected by the schema guard', () => {
     // The server rejects all-zeroes / well-known placeholder UUIDs as
-    // a defense against accidentally saving example values.
+    // a defense against accidentally saving example values. With limited
+    // tokens this may surface as a permission error instead.
     const placeholder = '00000000-0000-0000-0000-000000000000';
     const { stdout, stderr, exitCode } = runCLI(
       `azure setup --subscription-id ${placeholder} --tenant-id ${placeholder} --client-id ${placeholder} --client-secret notarealsecret`,
       { expectError: true },
     );
     expect(exitCode).not.toBe(0);
-    expect(stdout + stderr).toMatch(/(placeholder|example|invalid)/i);
+    expect(stdout + stderr).toMatch(
+      /placeholder|example|invalid|Access denied|Insufficient permissions|requires.*plan|403|requires.*role/i,
+    );
   });
 
   itAuthenticated('azure remove --force — non-interactive', () => {

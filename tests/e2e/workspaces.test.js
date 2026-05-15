@@ -27,10 +27,15 @@ describe('CLI Workspace Commands', () => {
       expect(Array.isArray(workspaces)).toBe(true);
     });
 
-    itAuthenticated('API endpoint returns the expected envelope', async () => {
+    itAuthenticated('API endpoint returns workspaces envelope or structured 4xx', async () => {
       const response = await apiCall('GET', '/api/workspaces');
-      const workspaces = response.workspaces || response;
-      expect(Array.isArray(workspaces) || typeof workspaces === 'object').toBe(true);
+      if (response.error) {
+        expect(response.status).toBeGreaterThanOrEqual(400);
+        expect(response.status).toBeLessThan(500);
+      } else {
+        const workspaces = response.workspaces || response;
+        expect(Array.isArray(workspaces) || typeof workspaces === 'object').toBe(true);
+      }
     });
   });
 

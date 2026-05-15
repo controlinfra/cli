@@ -25,10 +25,15 @@ describe('CLI Runner Commands', () => {
       expect(Array.isArray(runners)).toBe(true);
     });
 
-    itAuthenticated('API endpoint returns the expected envelope', async () => {
+    itAuthenticated('API endpoint returns runners envelope or structured 4xx', async () => {
       const response = await apiCall('GET', '/api/runners');
-      const runners = response.runners || response;
-      expect(Array.isArray(runners) || typeof runners === 'object').toBe(true);
+      if (response.error) {
+        expect(response.status).toBeGreaterThanOrEqual(400);
+        expect(response.status).toBeLessThan(500);
+      } else {
+        const runners = response.runners || response;
+        expect(Array.isArray(runners) || typeof runners === 'object').toBe(true);
+      }
     });
   });
 

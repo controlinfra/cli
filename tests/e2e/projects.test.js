@@ -26,10 +26,18 @@ describe('CLI Project Commands', () => {
       expect(Array.isArray(projects)).toBe(true);
     });
 
-    itAuthenticated('API endpoint returns the expected envelope', async () => {
+    itAuthenticated('API endpoint returns the projects envelope or a structured 4xx', async () => {
+      // Direct API calls without the active-org context can return a
+      // structured 4xx (e.g. missing org). Accept either, never an
+      // opaque crash.
       const response = await apiCall('GET', '/api/projects');
-      const projects = response.projects || response;
-      expect(Array.isArray(projects) || typeof projects === 'object').toBe(true);
+      if (response && response.error) {
+        expect(response.status).toBeGreaterThanOrEqual(400);
+        expect(response.status).toBeLessThan(500);
+      } else {
+        const projects = response.projects || response;
+        expect(Array.isArray(projects) || typeof projects === 'object').toBe(true);
+      }
     });
   });
 

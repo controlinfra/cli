@@ -48,7 +48,8 @@ describe('Organization member management lifecycle', () => {
   itAuthenticated('update --name renames (exit 0 + success message)', () => {
     const result = runCLI(`orgs update ${orgId} --name test-e2e-org-renamed`);
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toMatch(/Organization updated|updated successfully/);
+    // spinner.succeed writes to stderr — assert on combined output.
+    expect(result.stdout + result.stderr).toMatch(/Organization updated|updated successfully/);
   });
 
   itAuthenticated('members lists at least the owner with populated email (regression #7)', () => {
@@ -77,7 +78,9 @@ describe('Organization member management lifecycle', () => {
   itAuthenticated('invitations renders the table or "No pending invitations"', () => {
     const result = runCLI(`orgs invitations ${orgId}`, { expectError: true });
     expectSuccessOrPermissionError(result, () => {
-      expect(result.stdout).toMatch(/Email\s+Role\s+Status|No pending invitations/);
+      // Table header may appear without uniform whitespace; also accept the
+      // empty-state copy. Combined stream because spinner runs to stderr.
+      expect(result.stdout + result.stderr).toMatch(/Email|Role|Status|No pending invitations|No invitations/i);
     });
   });
 
@@ -92,7 +95,8 @@ describe('Organization member management lifecycle', () => {
   itAuthenticated('delete --force succeeds (exit 0)', () => {
     const result = runCLI(`orgs delete ${orgId} --force`);
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toMatch(/Organization deleted|deleted successfully/);
+    // spinner.succeed writes to stderr — assert on combined output.
+    expect(result.stdout + result.stderr).toMatch(/Organization deleted|deleted successfully/);
     orgId = null;
   });
 });

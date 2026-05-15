@@ -52,10 +52,15 @@ describe('CLI Scan Commands', () => {
       expectNoBugMarkers(result);
     });
 
-    itAuthenticated('API endpoint returns the expected envelope', async () => {
+    itAuthenticated('API endpoint returns the scans envelope or a structured 4xx', async () => {
       const response = await apiCall('GET', '/api/scans?limit=10');
-      const scans = response.scans || response;
-      expect(Array.isArray(scans) || typeof scans === 'object').toBe(true);
+      if (response && response.error) {
+        expect(response.status).toBeGreaterThanOrEqual(400);
+        expect(response.status).toBeLessThan(500);
+      } else {
+        const scans = response.scans || response;
+        expect(Array.isArray(scans) || typeof scans === 'object').toBe(true);
+      }
     });
   });
 

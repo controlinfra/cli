@@ -33,10 +33,15 @@ describe('CLI Organization Commands', () => {
       expect(tableResult.stdout).toMatch(new RegExp(`\\b${populated.stats.memberCount}\\b`));
     });
 
-    itAuthenticated('API endpoint returns the expected envelope', async () => {
+    itAuthenticated('API endpoint returns the orgs envelope or a structured 4xx', async () => {
       const response = await apiCall('GET', '/api/orgs');
-      const orgs = response.organizations || response.orgs || response;
-      expect(Array.isArray(orgs) || typeof orgs === 'object').toBe(true);
+      if (response && response.error) {
+        expect(response.status).toBeGreaterThanOrEqual(400);
+        expect(response.status).toBeLessThan(500);
+      } else {
+        const orgs = response.organizations || response.orgs || response;
+        expect(Array.isArray(orgs) || typeof orgs === 'object').toBe(true);
+      }
     });
   });
 

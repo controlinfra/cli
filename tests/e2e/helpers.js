@@ -3,7 +3,7 @@
  * Utilities for running CLI commands and making API calls
  */
 
-const { execSync, spawn } = require('child_process');
+const { execSync, spawn, spawnSync } = require('child_process');
 const path = require('path');
 const axios = require('axios');
 
@@ -26,25 +26,32 @@ function runCLI(args, options = {}) {
     ...options.env,
   };
 
-  try {
-    const stdout = execSync(`node "${CLI_PATH}" ${args}`, {
-      encoding: 'utf8',
-      timeout: options.timeout || 30000,
-      env,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
+  // Use spawnSync so we capture BOTH stdout and stderr regardless of
+  // exit code. execSync only returned stdout on success and lost the
+  // ora spinner messages (which go to stderr) — so assertions on
+  // `spinner.succeed("Project updated")` saw an empty stdout and
+  // failed in CI. Tests now assert against the combined output.
+  const tokens = String(args).match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+  const cleanedArgs = tokens.map((t) => (t.startsWith('"') && t.endsWith('"') ? t.slice(1, -1) : t));
+  const result = spawnSync('node', [CLI_PATH, ...cleanedArgs], {
+    encoding: 'utf8',
+    timeout: options.timeout || 30000,
+    env,
+    shell: false,
+  });
 
-    return { stdout, stderr: '', exitCode: 0 };
-  } catch (error) {
-    if (options.expectError) {
-      return {
-        stdout: error.stdout || '',
-        stderr: error.stderr || error.message,
-        exitCode: error.status || 1,
-      };
-    }
-    throw error;
+  const stdout = result.stdout || '';
+  const stderr = result.stderr || (result.error ? result.error.message : '');
+  const exitCode = result.status == null ? 1 : result.status;
+
+  if (exitCode !== 0 && !options.expectError) {
+    const err = new Error(`CLI exited with code ${exitCode}: ${stderr || stdout}`);
+    err.stdout = stdout;
+    err.stderr = stderr;
+    err.status = exitCode;
+    throw err;
   }
+  return { stdout, stderr, exitCode };
 }
 
 /**
@@ -62,6 +69,14 @@ async function apiCall(method, endpoint, data = null) {
 
   if (TEST_TOKEN) {
     headers['Authorization'] = `Bearer ${TEST_TOKEN}`;
+  }
+  // Most org-scoped endpoints (/api/repo-configs, /api/runners, /api/scans,
+  // /api/workspaces, /api/projects) require X-Org-Id to resolve the active
+  // organization. The CLI client sends this header automatically; we have to
+  // do it manually for direct API calls in tests. Pull from env so the
+  // GitHub Actions workflow can inject a known test org.
+  if (process.env.CONTROLINFRA_TEST_ORG_ID) {
+    headers['X-Org-Id'] = process.env.CONTROLINFRA_TEST_ORG_ID;
   }
 
   try {
