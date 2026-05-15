@@ -1,54 +1,60 @@
 /**
- * E2E Tests for Repository Commands
- * Tests: repos list, repos info
+ * E2E Tests for Repository Commands — `repos list`, `repos info`, help.
+ *
+ * Assertion strategy: see ./assertions.js. All tautological-regex matches
+ * (the kind that let audit bugs slip past) have been replaced with
+ * structure-specific assertions.
  */
 
 const { runCLI, apiCall, itAuthenticated } = require('./helpers');
+const {
+  expectListOutput, expectHelpLists, expectJsonOutput,
+  expectNotFoundError, expectNoBugMarkers,
+} = require('./assertions');
 
 describe('CLI Repository Commands', () => {
   describe('repos list', () => {
-    itAuthenticated('should list repositories', async () => {
-      const { stdout, exitCode } = runCLI('repos list');
-
-      expect(exitCode).toBe(0);
-      expect(stdout).toMatch(/Repository|No repositories|ID|Name/i);
+    itAuthenticated('shows the repo table or the explicit empty-state copy', async () => {
+      const result = runCLI('repos list');
+      expectListOutput(result, {
+        tableHeader: 'Repository',
+        emptyMarker: 'No repositories configured',
+      });
+      expectNoBugMarkers(result);
     });
 
-    itAuthenticated('should support JSON output', async () => {
-      const { stdout, exitCode } = runCLI('repos list --json');
-
-      expect(exitCode).toBe(0);
-      expect(() => JSON.parse(stdout)).not.toThrow();
+    itAuthenticated('--json emits a parseable array of objects', async () => {
+      const result = runCLI('repos list --json');
+      const parsed = expectJsonOutput(result);
+      const repos = parsed.repositories || parsed.configs || parsed;
+      expect(Array.isArray(repos)).toBe(true);
     });
 
-    itAuthenticated('should return repos via API', async () => {
-      const response = await apiCall('GET', '/api/repos');
-
-      expect(response).toBeDefined();
-      const repos = response.configs || response.repositories || response;
-      expect(Array.isArray(repos) || typeof repos === 'object').toBe(true);
+    itAuthenticated('API path returns either configs or repositories key', async () => {
+      const response = await apiCall('GET', '/api/repo-configs');
+      const repos = response.repositories || response.configs;
+      expect(Array.isArray(repos)).toBe(true);
     });
   });
 
   describe('repos help', () => {
-    it('should display repos help', () => {
-      const { stdout, exitCode } = runCLI('repos --help');
-
-      expect(exitCode).toBe(0);
-      expect(stdout).toContain('list');
-      expect(stdout).toContain('add');
-      expect(stdout).toContain('remove');
+    it('lists every registered subcommand', () => {
+      const result = runCLI('repos --help');
+      expectHelpLists(result, ['list', 'add', 'update', 'remove', 'info', 'stats']);
     });
   });
 
-  describe('repos info', () => {
-    itAuthenticated('should show error for non-existent repo', async () => {
-      const { stdout, stderr, exitCode } = runCLI('repos info non-existent-id-12345', {
-        expectError: true,
-      });
-
-      const output = stdout + stderr;
-      expect(output).toMatch(/not found|error|invalid/i);
+  describe('repos info — error path', () => {
+    itAuthenticated('non-existent ID returns specific "not found" copy + non-zero exit', async () => {
+      const result = runCLI('repos info non-existent-id-12345', { expectError: true });
+      // The controller emits "Repository configuration not found" (server)
+      // or "No repository found matching ..." (CLI resolver). Either is a
+      // valid not-found marker; opaque "error" output is not.
+      expectNotFoundError(
+        result,
+        /Repository (configuration )?not found|No repository found matching/,
+      );
+      expectNoBugMarkers(result);
     });
   });
 });
