@@ -100,12 +100,14 @@ const integrations = {
   async updateAiProvider(settings) {
     // CLI commands call this as `updateAiProvider({ provider: 'anthropic' })`
     // but the server's PUT /api/auth/ai-provider reads `defaultProvider`.
-    // Map at the boundary so legacy CLI call sites keep working. The
-    // server now accepts both keys (see ai-keys-openai.js fix), but
-    // sending the canonical name keeps logs clean.
-    const payload = settings?.provider && !settings?.defaultProvider
-      ? { ...settings, defaultProvider: settings.provider }
-      : settings;
+    // Rename at the boundary and DROP the legacy `provider` key so we
+    // don't double-send (which can trip strict-mode unknown-field
+    // validators server-side). Other future keys in `settings` pass
+    // through unchanged.
+    const { provider, ...rest } = settings || {};
+    const payload = provider && !rest.defaultProvider
+      ? { ...rest, defaultProvider: provider }
+      : rest;
     const { data } = await getClient().put('/api/auth/ai-provider', payload);
     return data;
   },

@@ -109,8 +109,19 @@ async function setup(options) {
       audience = audience || answers.audience;
       serviceAccountEmail = serviceAccountEmail || answers.serviceAccountEmail;
     }
+    // Flag-only paths bypass the inquirer `validate` callbacks (those only run
+    // when a prompt is shown). Re-check the three WIF fields here so bad values
+    // passed via --project-id / --service-account-email don't reach the API.
+    if (!isValidProjectId(projectId || '')) {
+      outputError('Invalid Project ID format');
+      process.exit(1);
+    }
     if (!isValidWifAudience(audience)) {
       outputError('Invalid WIF audience format. Expected: //iam.googleapis.com/projects/<num>/locations/global/workloadIdentityPools/<pool>/providers/<provider>');
+      process.exit(1);
+    }
+    if (!isValidServiceAccountEmail(serviceAccountEmail || '')) {
+      outputError('Must be a valid service account email');
       process.exit(1);
     }
   } else if (!projectId || !clientEmail || !privateKey) {
