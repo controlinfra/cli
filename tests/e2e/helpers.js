@@ -3,7 +3,7 @@
  * Utilities for running CLI commands and making API calls
  */
 
-const { execSync, spawn, spawnSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const path = require('path');
 const axios = require('axios');
 
