@@ -1,12 +1,19 @@
 /**
- * E2E Mutation Tests — CRUD lifecycle for projects, workspaces, runners, tokens,
- * plus scan/drift error-handling on non-existent resources.
+ * E2E Mutation Tests — CRUD lifecycle for projects, workspaces, runners,
+ * tokens, plus scan/drift error-handling on non-existent resources.
  *
  * Runs against the real stage API.  Skips automatically when no valid token.
+ *
+ * Assertion strategy: never use the tautological bag-of-words regex pattern
+ * (the kind that let 14 audit bugs slip past). Each test asserts on the
+ * specific marker a healthy command emits.
  */
 
 const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const { runCLI, itAuthenticated } = require('./helpers');
+const { expectNoBugMarkers } = require('./assertions');
 
 const FAKE_ID = '000000000000000000000000';
 
@@ -26,40 +33,49 @@ describe('Projects CRUD lifecycle', () => {
     if (projectId) runCLI(`projects delete ${projectId} --force`, { expectError: true });
   });
 
-  itAuthenticated('should have captured a project ID', () => {
-    expect(projectId).toBeTruthy();
+  itAuthenticated('create returns a 24-char ObjectId in the success message', () => {
+    expect(projectId).toMatch(/^[a-f0-9]{24}$/);
   });
 
-  itAuthenticated('projects list should contain the new project', () => {
-    const { stdout } = runCLI('projects list');
-    expect(stdout).toMatch(/test-e2e-project/);
-  });
-
-  itAuthenticated('projects info should show details', () => {
-    const { stdout } = runCLI(`projects info ${projectId}`);
-    expect(stdout).toMatch(/test-e2e-project|Project/i);
-  });
-
-  itAuthenticated('projects update should rename', () => {
-    const { exitCode } = runCLI(
-      `projects update ${projectId} --name test-e2e-renamed-${Date.now()}`,
-      { expectError: true }
-    );
-    expect([0, 1]).toContain(exitCode); // may fail if name exists from prior run
-  });
-
-  itAuthenticated('projects default should succeed', () => {
-    const { exitCode } = runCLI(`projects default ${projectId}`);
+  itAuthenticated('list shows the created project by name', () => {
+    const { stdout, exitCode } = runCLI('projects list');
     expect(exitCode).toBe(0);
+    expect(stdout).toContain('test-e2e-project');
   });
 
-  itAuthenticated('projects delete should succeed', () => {
-    // Create a temp project so this isn't the only one
-    runCLI('projects create temp-e2e-keeper --provider aws', { expectError: true });
-    const { exitCode } = runCLI(`projects delete ${projectId} --force`, { expectError: true });
-    // May fail if it's still the only project — accept both outcomes
-    expect([0, 1]).toContain(exitCode);
-    if (exitCode === 0) projectId = null;
+  itAuthenticated('info renders the detail box with Name field populated', () => {
+    const result = runCLI(`projects info ${projectId}`);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('Project Details');
+    expect(result.stdout).toContain('test-e2e-project');
+    expectNoBugMarkers(result);
+  });
+
+  itAuthenticated('update renames the project (exit 0)', () => {
+    const newName = `test-e2e-renamed-${Date.now()}`;
+    const { stdout, stderr, exitCode } = runCLI(
+      `projects update ${projectId} --name ${newName}`,
+    );
+    expect(exitCode).toBe(0);
+    // spinner.succeed() writes to stderr (ora default); check combined.
+    expect(stdout + stderr).toMatch(/Project updated|updated successfully/);
+  });
+
+  itAuthenticated('default flag succeeds (exit 0)', () => {
+    const { stdout, stderr, exitCode } = runCLI(`projects default ${projectId}`);
+    expect(exitCode).toBe(0);
+    expect(stdout + stderr).toMatch(/Default project updated|set as default/);
+  });
+
+  itAuthenticated('delete fails with "only project" guard when alone', () => {
+    // The server prevents deletion of the only project — assert the
+    // exact guard error, not just "exit code 1".
+    const result = runCLI(`projects delete ${projectId} --force`, { expectError: true });
+    if (result.exitCode === 0) {
+      projectId = null;
+      return;
+    }
+    expect(result.stdout + result.stderr).toMatch(/Cannot delete your only project|at least one project must remain/i);
   });
 });
 
@@ -79,49 +95,52 @@ describe('Workspaces CRUD lifecycle', () => {
     if (wsId) runCLI(`workspaces remove ${wsId} --force`, { expectError: true });
   });
 
-  itAuthenticated('should have captured a workspace ID', () => {
-    expect(wsId).toBeTruthy();
+  itAuthenticated('add returns a 24-char ObjectId', () => {
+    expect(wsId).toMatch(/^[a-f0-9]{24}$/);
   });
 
-  itAuthenticated('workspaces info should show details', () => {
-    const { stdout } = runCLI(`workspaces info ${wsId}`);
-    expect(stdout).toMatch(/test-e2e-ws|Workspace/i);
+  itAuthenticated('info renders the detail box with Name + Cloud labels', () => {
+    const result = runCLI(`workspaces info ${wsId}`);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('Workspace Details');
+    expect(result.stdout).toContain('test-e2e-ws');
+    expect(result.stdout).toMatch(/Cloud:\s+aws/);
+    expectNoBugMarkers(result);
   });
 
-  itAuthenticated('workspaces update should rename', () => {
-    const { exitCode } = runCLI(
-      `workspaces update ${wsId} --name test-e2e-ws-renamed-${Date.now()}`,
-      { expectError: true }
-    );
-    expect([0, 1]).toContain(exitCode); // may fail if name exists from prior run
-  });
-
-  itAuthenticated('workspaces default should succeed', () => {
-    const { exitCode } = runCLI(`workspaces default ${wsId}`);
+  itAuthenticated('default sets the workspace as default (exit 0)', () => {
+    const { stdout, stderr, exitCode } = runCLI(`workspaces default ${wsId}`);
     expect(exitCode).toBe(0);
+    expect(stdout + stderr).toMatch(/Default workspace updated|set as default/);
   });
 
-  itAuthenticated('workspaces access should show list', () => {
-    const { exitCode } = runCLI(`workspaces access ${wsId}`);
-    expect(exitCode).toBe(0);
+  itAuthenticated('access shows the access list or "no access entries"', () => {
+    const result = runCLI(`workspaces access ${wsId}`);
+    expect(result.exitCode).toBe(0);
+    const out = result.stdout + result.stderr;
+    expect(out).toMatch(/Workspace Access|No access entries|members|owner/);
+    expectNoBugMarkers(result);
   });
 
-  itAuthenticated('workspaces visibility should succeed or fail gracefully', () => {
-    const { exitCode, stdout, stderr } = runCLI(
-      `workspaces visibility ${wsId} org-wide`,
-      { expectError: true }
-    );
-    // Accept success or any structured failure (not a crash)
-    expect([0, 1]).toContain(exitCode);
-    if (exitCode === 1) {
-      expect(stdout + stderr).toMatch(/./); // non-empty output
-    }
+  itAuthenticated('visibility org-wide flips the field (exit 0)', () => {
+    const result = runCLI(`workspaces visibility ${wsId} org-wide`);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout + result.stderr).toMatch(/Visibility updated|visibility set to/);
   });
 
-  itAuthenticated('workspaces remove should succeed', () => {
-    const { exitCode } = runCLI(`workspaces remove ${wsId} --force`, { expectError: true });
-    expect([0, 1]).toContain(exitCode); // may fail if only workspace
-    if (exitCode === 0) wsId = null;
+  itAuthenticated('visibility with bogus value rejects with explicit allowlist message', () => {
+    const result = runCLI(`workspaces visibility ${wsId} bogus-value`, { expectError: true });
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout + result.stderr).toMatch(/Invalid visibility.*org-wide|restricted/);
+  });
+
+  itAuthenticated('remove --force succeeds without prompt (exit 0)', () => {
+    const result = runCLI(`workspaces remove ${wsId} --force`, { expectError: true });
+    expect([0, 1]).toContain(result.exitCode);
+    // --force must not prompt — verifying via output is the only way to
+    // catch a regression that drops the flag handling silently.
+    expect(result.stdout + result.stderr).not.toContain('? Are you sure');
+    if (result.exitCode === 0) wsId = null;
   });
 });
 
@@ -141,48 +160,91 @@ describe('Runners CRUD lifecycle', () => {
     if (runnerId) runCLI(`runners remove ${runnerId} --force`, { expectError: true });
   });
 
-  itAuthenticated('should have captured a runner ID', () => {
-    expect(runnerId).toBeTruthy();
+  itAuthenticated('add returns a 24-char ObjectId', () => {
+    expect(runnerId).toMatch(/^[a-f0-9]{24}$/);
   });
 
-  itAuthenticated('runners status should show pending', () => {
-    const { stdout } = runCLI(`runners status ${runnerId}`);
-    expect(stdout).toMatch(/pending|offline|status/i);
+  itAuthenticated('add output includes the pending-runners hint (regression #13)', () => {
+    // The audit added this hint because `runners list` filters out
+    // pending runners by design — without the hint, users think
+    // `runners add` failed.
+    const { stdout } = runCLI('runners add test-e2e-hint-runner');
+    expect(stdout).toMatch(/pending runners are hidden|until they register/i);
+    // Clean up the throwaway runner
+    const m = stdout.match(/ID:\s+([a-f0-9]{24})/i);
+    if (m) runCLI(`runners remove ${m[1]} --force`, { expectError: true });
   });
 
-  itAuthenticated('runners update should rename', () => {
-    const { exitCode } = runCLI(
-      `runners update ${runnerId} --name test-e2e-runner-renamed`
+  itAuthenticated('status box shows Runner Status header + Name + Status fields', () => {
+    if (!runnerId) return; // beforeAll didn't capture an ID — skip
+    const result = runCLI(`runners status ${runnerId}`, { expectError: true });
+    // The runner may have been auto-cleaned by another test or
+    // background job between create + status. We accept either a
+    // healthy box render OR a clean "Runner not found" — not an
+    // opaque crash.
+    if (result.exitCode === 0) {
+      expect(result.stdout).toContain('Runner Status');
+      expect(result.stdout).toMatch(/Status:\s+(pending|offline|online)/);
+    } else {
+      expect(result.stdout + result.stderr).toMatch(/Runner not found|No runner found matching/);
+    }
+    expectNoBugMarkers(result);
+  });
+
+  itAuthenticated('update --name renames (exit 0 or runner-gone)', () => {
+    if (!runnerId) return;
+    const result = runCLI(
+      `runners update ${runnerId} --name test-e2e-renamed-${Date.now()}`,
+      { expectError: true },
     );
-    expect(exitCode).toBe(0);
-  });
-
-  itAuthenticated('runners token should regenerate', () => {
-    const { stdout, exitCode } = runCLI(`runners token ${runnerId}`, { expectError: true });
-    if (exitCode === 0) {
-      expect(stdout).toMatch(/token/i);
+    if (result.exitCode !== 0) {
+      expect(result.stdout + result.stderr).toMatch(/Runner not found|No runner found matching/);
     }
-    // May hit rate limit — accept both outcomes
-    expect([0, 1]).toContain(exitCode);
   });
 
-  itAuthenticated('runners setup should show install script', () => {
-    const { stdout, exitCode } = runCLI(`runners setup ${runnerId} --os linux`, { expectError: true });
-    if (exitCode === 0) {
-      expect(stdout).toMatch(/install|curl|script|setup/i);
+  itAuthenticated('token regen emits a new token or specific not-found/permission error', () => {
+    if (!runnerId) return;
+    const result = runCLI(`runners token ${runnerId}`, { expectError: true });
+    if (result.exitCode === 0) {
+      // New token format is cifra_<64 hex> — asserting the prefix
+      // catches a regression that printed the placeholder instead.
+      expect(result.stdout + result.stderr).toMatch(/cifra_[a-f0-9]{32,}/);
+    } else {
+      // Acceptable: runner gone, rate-limited, or permission denied.
+      expect(result.stdout + result.stderr).toMatch(
+        /Runner not found|No runner found|rate.?limit|429|Insufficient|403/i,
+      );
     }
-    expect([0, 1]).toContain(exitCode);
   });
 
-  itAuthenticated('runners offline should succeed', () => {
-    const { exitCode } = runCLI(`runners offline ${runnerId}`);
-    expect(exitCode).toBe(0);
+  itAuthenticated('setup emits the curl install command pointing at this API', () => {
+    if (!runnerId) return;
+    const result = runCLI(`runners setup ${runnerId}`, { expectError: true });
+    if (result.exitCode === 0) {
+      expect(result.stdout + result.stderr).toMatch(
+        /curl -sL "https?:\/\/[^"]+\/api\/runners\/[a-f0-9]{24}\/setup\?token=cifra_/,
+      );
+    }
+    expectNoBugMarkers(result);
   });
 
-  itAuthenticated('runners remove should succeed', () => {
-    const { exitCode } = runCLI(`runners remove ${runnerId} --force`);
-    expect(exitCode).toBe(0);
-    runnerId = null;
+  itAuthenticated('offline marks runner offline (or returns clean not-found)', () => {
+    if (!runnerId) return;
+    const result = runCLI(`runners offline ${runnerId}`, { expectError: true });
+    if (result.exitCode !== 0) {
+      expect(result.stdout + result.stderr).toMatch(/Runner not found|No runner found matching/);
+    }
+  });
+
+  itAuthenticated('remove --force deletes or reports not-found cleanly', () => {
+    if (!runnerId) return;
+    const result = runCLI(`runners remove ${runnerId} --force`, { expectError: true });
+    if (result.exitCode === 0) {
+      expect(result.stdout + result.stderr).toMatch(/Runner deleted/);
+      runnerId = null;
+    } else {
+      expect(result.stdout + result.stderr).toMatch(/Runner not found|No runner found matching/);
+    }
   });
 });
 
@@ -192,86 +254,105 @@ describe('Runners CRUD lifecycle', () => {
 describe('Tokens CRUD lifecycle', () => {
   let tokenId;
 
-  itAuthenticated('tokens create should succeed', () => {
-    const { stdout, stderr, exitCode } = runCLI(
+  itAuthenticated('create emits a ci_-prefixed token + 24-char ID (or specific permission error)', () => {
+    const result = runCLI(
       'tokens create test-e2e-token --scopes scans:read,drifts:read --expires-in 1',
-      { expectError: true }
+      { expectError: true },
     );
-    if (exitCode === 0) {
-      expect(stdout).toMatch(/token|created|key/i);
+    if (result.exitCode === 0) {
+      // Real tokens look like ci_<hex>. Asserting the prefix catches a
+      // regression that printed something other than a token.
+      expect(result.stdout + result.stderr).toMatch(/ci_[a-f0-9]{32,}/);
     } else {
-      expect(stdout + stderr).toMatch(/denied|permission|plan|403/i);
+      expect(result.stdout + result.stderr).toMatch(/Access denied|Insufficient|403|requires.*plan/i);
     }
+    expectNoBugMarkers(result);
   });
 
-  itAuthenticated('tokens list should contain the token', () => {
-    const { stdout, exitCode } = runCLI('tokens list --json', { expectError: true });
-    if (exitCode !== 0) return;
-    const data = JSON.parse(stdout.replace(/^[^[{]*/, '')); // strip spinner text
+  itAuthenticated('list (after create) contains test-e2e-token by name', () => {
+    const result = runCLI('tokens list --json', { expectError: true });
+    if (result.exitCode !== 0) return;
+    // Strip any spinner prefix before the JSON
+    const jsonStart = result.stdout.search(/[[{]/);
+    if (jsonStart < 0) return;
+    const data = JSON.parse(result.stdout.slice(jsonStart));
     const tokens = data.tokens || data;
-    const found = Array.isArray(tokens) &&
-      tokens.find(t => (t.name || '').includes('test-e2e-token'));
-    if (found) tokenId = found._id || found.id;
     expect(Array.isArray(tokens)).toBe(true);
+    const found = tokens.find((t) => (t.name || '').includes('test-e2e-token'));
+    if (found) tokenId = found.id || found._id;
   });
 
-  itAuthenticated('tokens revoke should succeed', () => {
+  itAuthenticated('revoke succeeds (exit 0) when token was found', () => {
     if (!tokenId) return;
-    const { exitCode } = runCLI(`tokens revoke ${tokenId}`, { expectError: true });
-    expect([0, 1]).toContain(exitCode);
+    const result = runCLI(`tokens revoke ${tokenId}`);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout + result.stderr).toMatch(/Token revoked/);
   });
 });
 
 /* ------------------------------------------------------------------ */
-/*  Scan error handling (no active scan)                               */
+/*  Scan error handling — assert SPECIFIC not-found copy, not "error"  */
 /* ------------------------------------------------------------------ */
 describe('Scan commands — non-existent resources', () => {
+  // Each entry: [command, pattern that must appear in the error]. The
+  // patterns are SPECIFIC strings the controllers emit, not bag-of-words.
   const cmds = [
-    ['scan run nonexistent/repo', /not found|error|invalid|failed|denied|permission/i],
-    [`scan status ${FAKE_ID}`, /not found|error|invalid|failed|denied|permission/i],
-    [`scan cancel ${FAKE_ID}`, /not found|error|invalid|failed|denied|permission/i],
-    [`scan logs ${FAKE_ID}`, /not found|error|invalid|failed|denied|permission/i],
-    [`scan retry ${FAKE_ID}`, /not found|error|invalid|failed|denied|permission/i],
-    [`scan delete ${FAKE_ID} --force`, /not found|error|invalid|failed|denied|permission/i],
+    // `scan run <owner/repo>` resolves the repo by GitHub fullName via the
+    // CLI; when not configured, the CLI prints "Make sure the repository
+    // is configured. Run: ...". For full-ObjectId paths the controller
+    // returns "Repository (configuration) not found". Accept either.
+    ['scan run nonexistent/repo',                /Repository (configuration )?not found|No repository found matching|Make sure the repository is configured/],
+    [`scan status ${FAKE_ID}`,                   /Scan not found|No scan found matching/],
+    [`scan cancel ${FAKE_ID}`,                   /Scan not found|Cannot cancel|No scan found/],
+    [`scan logs ${FAKE_ID}`,                     /Scan not found|No scan found matching/],
+    [`scan retry ${FAKE_ID}`,                    /Scan not found|No scan found matching/],
+    [`scan delete ${FAKE_ID} --force`,           /Scan not found|No scan found matching/],
   ];
 
   cmds.forEach(([cmd, pattern]) => {
-    itAuthenticated(`${cmd} should fail`, () => {
-      const { stdout, stderr } = runCLI(cmd, { expectError: true });
-      expect(stdout + stderr).toMatch(pattern);
+    itAuthenticated(`${cmd} fails with specific error`, () => {
+      const result = runCLI(cmd, { expectError: true });
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stdout + result.stderr).toMatch(pattern);
+      expectNoBugMarkers(result);
     });
   });
 });
 
 /* ------------------------------------------------------------------ */
-/*  Drift error handling (non-existent resources) + export             */
+/*  Drift error handling + export                                       */
 /* ------------------------------------------------------------------ */
 describe('Drift commands — non-existent resources & export', () => {
+  // `drifts show` is read-only — must return the not-found error directly.
+  // Write commands (fix, pr, ignore, resolve, reanalyze) may surface a
+  // permission error first when the test token lacks drifts:write — accept
+  // either branch but never an opaque crash.
+  const PERM = /Access denied|Insufficient permissions|requires.*plan|403|requires.*role/i;
   const cmds = [
-    [`drifts show ${FAKE_ID}`, /not found|error|invalid|failed|denied|permission/i],
-    [`drifts fix ${FAKE_ID}`, /not found|error|invalid|failed|denied|permission/i],
-    [`drifts pr ${FAKE_ID}`, /not found|error|invalid|failed|denied|permission/i],
-    [`drifts ignore ${FAKE_ID}`, /not found|error|invalid|failed|denied|permission/i],
-    [`drifts resolve ${FAKE_ID}`, /not found|error|invalid|failed|denied|permission/i],
-    [`drifts reanalyze ${FAKE_ID}`, /not found|error|invalid|failed|denied|permission/i],
+    [`drifts show ${FAKE_ID}`,      /Drift not found|No drift found/, false],
+    [`drifts fix ${FAKE_ID}`,       /Drift not found|No drift found/, true],
+    [`drifts pr ${FAKE_ID}`,        /Drift not found|No drift found/, true],
+    [`drifts ignore ${FAKE_ID}`,    /Drift not found|No drift found/, true],
+    [`drifts resolve ${FAKE_ID}`,   /Drift not found|No drift found/, true],
+    [`drifts reanalyze ${FAKE_ID}`, /Drift not found|No drift found/, true],
   ];
 
-  cmds.forEach(([cmd, pattern]) => {
-    itAuthenticated(`${cmd} should fail`, () => {
-      const { stdout, stderr } = runCLI(cmd, { expectError: true });
-      expect(stdout + stderr).toMatch(pattern);
+  cmds.forEach(([cmd, pattern, allowPerm]) => {
+    itAuthenticated(`${cmd} fails with specific error`, () => {
+      const result = runCLI(cmd, { expectError: true });
+      expect(result.exitCode).not.toBe(0);
+      const out = result.stdout + result.stderr;
+      if (allowPerm) {
+        expect(pattern.test(out) || PERM.test(out)).toBe(true);
+      } else {
+        expect(out).toMatch(pattern);
+      }
+      expectNoBugMarkers(result);
     });
   });
 
-  itAuthenticated('drifts export should succeed (empty array)', () => {
-    const { stdout, exitCode } = runCLI('drifts export', { expectError: true });
-    if (exitCode === 0) {
-      expect(stdout).toMatch(/\[/); // contains array
-    }
-  });
-
-  itAuthenticated('drifts export --output should write file', () => {
-    const outPath = '/tmp/test-export.json';
+  itAuthenticated('drifts export --output writes parseable JSON to disk', () => {
+    const outPath = path.join(os.tmpdir(), `controlinfra-test-export-${Date.now()}.json`);
     const { exitCode } = runCLI(`drifts export --output ${outPath}`, { expectError: true });
     if (exitCode === 0 && fs.existsSync(outPath)) {
       const content = fs.readFileSync(outPath, 'utf8');

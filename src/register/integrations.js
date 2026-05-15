@@ -54,6 +54,7 @@ function registerIntegrations(program) {
   aws
     .command('remove')
     .description('Remove AWS credentials')
+    .option('--force', 'Skip confirmation prompt')
     .action(awsCommands.remove);
 
   // Azure
@@ -82,6 +83,7 @@ function registerIntegrations(program) {
   azure
     .command('remove')
     .description('Remove Azure credentials')
+    .option('--force', 'Skip confirmation prompt')
     .action(azureCommands.remove);
 
   // GCP
@@ -94,7 +96,14 @@ function registerIntegrations(program) {
     .option('--project-id <id>', 'GCP Project ID')
     .option('--client-email <email>', 'Service Account email')
     .option('--private-key <key>', 'Private key (PEM format)')
-    .option('--workload-identity', 'Use Workload Identity (GKE/Cloud Run)')
+    .option('--workload-identity', 'Use Workload Identity (GKE/Cloud Run metadata)')
+    // Workload Identity Federation — zero-credential auth via Controlinfra-signed
+    // OIDC token. Shipped end-to-end in the multi-cloud parity bundle but the
+    // CLI had no flag for it, so WIF customers couldn't run `gcp setup` from
+    // the terminal — UI-only workaround until now.
+    .option('--workload-identity-federation', 'Use Workload Identity Federation (OIDC-based, no service account key)')
+    .option('--audience <urn>', 'WIF pool/provider audience: //iam.googleapis.com/projects/<num>/locations/global/workloadIdentityPools/<pool>/providers/<provider>')
+    .option('--service-account-email <email>', 'Service account to impersonate after WIF token exchange')
     .action(gcpCommands.setup);
 
   gcp
@@ -110,6 +119,7 @@ function registerIntegrations(program) {
   gcp
     .command('remove')
     .description('Remove GCP credentials')
+    .option('--force', 'Skip confirmation prompt')
     .action(gcpCommands.remove);
 
   // AI Provider

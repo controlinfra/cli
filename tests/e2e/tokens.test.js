@@ -1,46 +1,42 @@
 /**
- * E2E Tests for Token Commands
- * Tests: tokens list, tokens help
+ * E2E Tests for Token Commands — `tokens list`, help.
  *
- * Note: token list/create/revoke require Pro+ plan and JWT auth.
- * CI tokens (ci_ prefix) may lack permission — tests accept both
- * success and "access denied" as valid outcomes.
+ * Note: CLI tokens (ci_ prefix) may lack `tokens:read` scope, so tests
+ * accept either success OR a specific permission error — never an
+ * opaque crash.
  */
 
 const { runCLI, itAuthenticated } = require('./helpers');
+const {
+  expectHelpLists, expectJsonOutput, expectSuccessOrPermissionError, expectNoBugMarkers,
+} = require('./assertions');
 
 describe('CLI Token Commands', () => {
   describe('tokens list', () => {
-    itAuthenticated('should list tokens or deny if insufficient permissions', async () => {
-      const { stdout, stderr, exitCode } = runCLI('tokens list', { expectError: true });
-
-      // Either succeeds (JWT with Pro+ plan) or denied (CLI token / free plan)
-      if (exitCode === 0) {
-        expect(stdout).toMatch(/Token|No tokens|ID|Name|Key/i);
-      } else {
-        expect(stdout + stderr).toMatch(/Access denied|permission|Insufficient|403/i);
-      }
+    itAuthenticated('renders the token table or returns a specific permission error', async () => {
+      const result = runCLI('tokens list', { expectError: true });
+      expectSuccessOrPermissionError(result, () => {
+        // Success path: header row contains "Name" and "Scopes" columns.
+        // (The empty state is "No tokens" — exit 0 either way.)
+        expect(result.stdout).toMatch(/Name\s+Scopes|No tokens|No CLI tokens/);
+      });
+      expectNoBugMarkers(result);
     });
 
-    itAuthenticated('should support JSON output when permitted', async () => {
-      const { stdout, stderr, exitCode } = runCLI('tokens list --json', { expectError: true });
-
-      if (exitCode === 0) {
-        expect(() => JSON.parse(stdout)).not.toThrow();
-      } else {
-        expect(stdout + stderr).toMatch(/Access denied|permission|Insufficient|403/i);
-      }
+    itAuthenticated('--json emits an array when permitted', async () => {
+      const result = runCLI('tokens list --json', { expectError: true });
+      expectSuccessOrPermissionError(result, () => {
+        const parsed = expectJsonOutput(result);
+        const tokens = parsed.tokens || parsed;
+        expect(Array.isArray(tokens)).toBe(true);
+      });
     });
   });
 
   describe('tokens help', () => {
-    it('should display tokens help with all subcommands', () => {
-      const { stdout, exitCode } = runCLI('tokens --help');
-
-      expect(exitCode).toBe(0);
-      expect(stdout).toContain('list');
-      expect(stdout).toContain('create');
-      expect(stdout).toContain('revoke');
+    it('lists every registered subcommand', () => {
+      const result = runCLI('tokens --help');
+      expectHelpLists(result, ['list', 'create', 'revoke']);
     });
   });
 });

@@ -95,6 +95,12 @@ async function add(name, options, command) {
     console.log(brand.cyan(`   controlinfra runners setup ${runnerId}\n`));
     console.log('2. Or manually install the runner agent on your server');
     console.log();
+    // Heads-up: `runners list` filters out pending runners (those without
+    // a heartbeat) by design — so this newly-created runner won't show up
+    // until the install script completes. Without this hint users think
+    // their `runners add` succeeded but `runners list` shows nothing.
+    console.log(chalk.dim('Note: pending runners are hidden from'), brand.cyan('runners list'), chalk.dim('until they register'));
+    console.log(chalk.dim('their first heartbeat. Run the setup script above to bring this one online.\n'));
   } catch (error) {
     spinner.fail('Failed to create runner');
     outputError(error.message);

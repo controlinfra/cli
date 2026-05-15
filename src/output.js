@@ -29,7 +29,26 @@ const brand = {
   ],
 };
 
+// No-op spinner stand-in used under --quiet so commands don't have
+// to detect the flag at every call site. Returns an object that
+// matches ora's chainable API (start/stop/succeed/fail/warn/text) so
+// existing code keeps working without checking the type.
+const NOOP_SPINNER = {
+  text: '',
+  start() { return this; },
+  stop() { return this; },
+  succeed() { return this; },
+  fail() { return this; },
+  warn() { return this; },
+  info() { return this; },
+  clear() { return this; },
+};
+
 function createSpinner(text) {
+  // The preAction hook in src/index.js sets process.env.__CLI_QUIET when
+  // --quiet is parsed. We honor it here so spinners (which write to stderr
+  // and thus survive console.log = noop) are silenced too.
+  if (process.env.__CLI_QUIET === '1') return NOOP_SPINNER;
   return ora({
     text,
     color: 'magenta',

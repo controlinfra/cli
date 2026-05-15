@@ -176,21 +176,24 @@ async function test(_options) {
 /**
  * Remove Azure credentials
  */
-async function remove(_options) {
+async function remove(options) {
   requireAuth();
 
-  const { confirm } = await inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'confirm',
-      message: 'Are you sure you want to remove Azure credentials?',
-      default: false,
-    },
-  ]);
+  // --force skips the interactive confirm — keeps CI/CD usage possible.
+  if (!options?.force) {
+    const { confirm } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'confirm',
+        message: 'Are you sure you want to remove Azure credentials?',
+        default: false,
+      },
+    ]);
 
-  if (!confirm) {
-    console.log(chalk.dim('Cancelled\n'));
-    return;
+    if (!confirm) {
+      console.log(chalk.dim('Cancelled\n'));
+      return;
+    }
   }
 
   const spinner = createSpinner('Removing Azure credentials...').start();

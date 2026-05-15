@@ -1,68 +1,70 @@
 /**
- * E2E Tests for Auth Commands
- * Tests: whoami, login status
+ * E2E Tests for Auth Commands — `whoami`, `--version`, `--help`, no-auth state.
  */
 
 const os = require('os');
 const path = require('path');
 const { runCLI, itAuthenticated, API_URL, TEST_TOKEN } = require('./helpers');
+const { expectDetailOutput, expectHelpLists, expectNoBugMarkers } = require('./assertions');
 
 describe('CLI Auth Commands', () => {
   describe('whoami', () => {
-    itAuthenticated('should display current user info when authenticated', async () => {
-      const { stdout, exitCode } = runCLI('whoami');
-
-      expect(exitCode).toBe(0);
-      expect(stdout).toMatch(/Current User|Name:|Email:/i);
+    itAuthenticated('renders the Current User box with Name + Email labels', async () => {
+      const result = runCLI('whoami');
+      // Specific structural assertions on the actual rendered box.
+      // Old test matched /Current User|Name:|Email:/ which passed if
+      // ANY of those words appeared — including in a crash backtrace.
+      expectDetailOutput(result, ['Current User', 'Name:', 'Email:', 'Role:']);
+      expectNoBugMarkers(result);
     });
 
-    itAuthenticated('should return user data via API', async () => {
+    itAuthenticated('API /api/auth/me returns a user with at least one identifier field', async () => {
       const axios = require('axios');
       const response = await axios.get(`${API_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${TEST_TOKEN}` },
       });
-
       expect(response.data).toBeDefined();
-      expect(response.data.displayName || response.data.email || response.data.username).toBeDefined();
+      // Must have AT LEAST ONE identifier — old test passed if any of
+      // 3 fields was set, which is fine; tightening: the response must
+      // have an _id or id, which is non-negotiable for a real user doc.
+      expect(response.data._id || response.data.id).toBeTruthy();
     });
   });
 
   describe('version and help', () => {
-    it('should display version', () => {
-      const { stdout, exitCode } = runCLI('--version');
-
-      expect(exitCode).toBe(0);
-      expect(stdout).toMatch(/\d+\.\d+\.\d+/);
+    it('--version prints a semver-shaped string', () => {
+      const result = runCLI('--version');
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout.trim()).toMatch(/^\d+\.\d+\.\d+(?:-[\w.]+)?$/);
     });
 
-    it('should display help', () => {
-      const { stdout, exitCode } = runCLI('--help');
-
-      expect(exitCode).toBe(0);
-      expect(stdout).toContain('controlinfra');
-      expect(stdout).toContain('login');
-      expect(stdout).toContain('logout');
-      expect(stdout).toContain('repos');
-      expect(stdout).toContain('scan');
+    it('--help lists every top-level subcommand', () => {
+      const result = runCLI('--help');
+      // Every command group must appear — surfaces dropped registrations.
+      expectHelpLists(result, [
+        'login', 'logout', 'whoami', 'repos', 'scan', 'drifts', 'runners',
+        'workspaces', 'slack', 'aws', 'azure', 'gcp', 'ai', 'orgs',
+        'projects', 'config', 'tokens',
+      ]);
     });
   });
 
   describe('unauthenticated access', () => {
-    it('should show login prompt when not authenticated', () => {
-      // Use a temp APPDATA/XDG_CONFIG_HOME so the CLI doesn't read
-      // the real stored token from the user's config file
+    it('whoami without auth renders the explicit "Not logged in" CTA', () => {
+      // Use temp config dir so we don't read stored creds.
+      // whoami intentionally does NOT exit non-zero when unauth — it
+      // prints a friendly CTA and returns. The behavior is locked here
+      // so a regression that changes whoami to throw / hang surfaces.
       const tmpConfig = path.join(os.tmpdir(), `ci-test-noauth-${Date.now()}`);
-      const { stdout, stderr } = runCLI('whoami', {
-        env: {
-          CONTROLINFRA_TOKEN: '',
-          APPDATA: tmpConfig,
-          XDG_CONFIG_HOME: tmpConfig,
-        },
+      const result = runCLI('whoami', {
+        env: { CONTROLINFRA_TOKEN: '', APPDATA: tmpConfig, XDG_CONFIG_HOME: tmpConfig },
         expectError: true,
       });
-
-      const output = stdout + stderr;
-      expect(output).toMatch(/not logged in|login|authenticate/i);
+      // Specific copy emitted by auth.js#whoami — not just any output
+      // containing "login".
+      const out = result.stdout + result.stderr;
+      expect(out).toMatch(/Not authenticated|Not logged in/);
+      expect(out).toContain('controlinfra login');
     });
   });
 });

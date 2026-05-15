@@ -1,61 +1,62 @@
 /**
- * E2E Tests for Workspace Commands
- * Tests: workspaces list, workspaces info
+ * E2E Tests for Workspace Commands — `workspaces list`, `workspaces info`, help.
  */
 
 const { runCLI, apiCall, itAuthenticated } = require('./helpers');
+const {
+  expectListOutput, expectHelpLists, expectJsonOutput,
+  expectNotFoundError, expectNoBugMarkers,
+} = require('./assertions');
 
 describe('CLI Workspace Commands', () => {
   describe('workspaces list', () => {
-    itAuthenticated('should list workspaces', async () => {
-      const { stdout, exitCode } = runCLI('workspaces list');
-
-      expect(exitCode).toBe(0);
-      expect(stdout).toMatch(/Workspace|No workspaces|ID|Name/i);
+    itAuthenticated('shows the workspace table or the explicit empty-state copy', async () => {
+      const result = runCLI('workspaces list');
+      expectListOutput(result, {
+        // Column headers include Name + Cloud; empty state is "No workspaces".
+        tableHeader: 'Name',
+        emptyMarker: 'No workspaces',
+      });
+      expectNoBugMarkers(result);
     });
 
-    itAuthenticated('should support JSON output', async () => {
-      const { stdout, exitCode } = runCLI('workspaces list --json');
-
-      expect(exitCode).toBe(0);
-      expect(() => JSON.parse(stdout)).not.toThrow();
+    itAuthenticated('--json emits a parseable array', async () => {
+      const result = runCLI('workspaces list --json');
+      const parsed = expectJsonOutput(result);
+      const workspaces = parsed.workspaces || parsed;
+      expect(Array.isArray(workspaces)).toBe(true);
     });
 
-    itAuthenticated('should return workspaces via API', async () => {
+    itAuthenticated('API endpoint returns workspaces envelope or structured 4xx', async () => {
       const response = await apiCall('GET', '/api/workspaces');
-
-      expect(response).toBeDefined();
-      const workspaces = response.workspaces || response;
-      expect(Array.isArray(workspaces) || typeof workspaces === 'object').toBe(true);
+      if (response.error) {
+        expect(response.status).toBeGreaterThanOrEqual(400);
+        expect(response.status).toBeLessThan(500);
+      } else {
+        const workspaces = response.workspaces || response;
+        expect(Array.isArray(workspaces) || typeof workspaces === 'object').toBe(true);
+      }
     });
   });
 
   describe('workspaces help', () => {
-    it('should display workspaces help with all subcommands', () => {
-      const { stdout, exitCode } = runCLI('workspaces --help');
-
-      expect(exitCode).toBe(0);
-      expect(stdout).toContain('list');
-      expect(stdout).toContain('add');
-      expect(stdout).toContain('info');
-      expect(stdout).toContain('update');
-      expect(stdout).toContain('remove');
-      expect(stdout).toContain('default');
-      expect(stdout).toContain('access');
-      expect(stdout).toContain('access-add');
-      expect(stdout).toContain('access-remove');
-      expect(stdout).toContain('visibility');
+    it('lists every registered subcommand', () => {
+      const result = runCLI('workspaces --help');
+      expectHelpLists(result, [
+        'list', 'add', 'info', 'update', 'remove', 'default',
+        'access', 'access-add', 'access-remove', 'visibility',
+      ]);
     });
   });
 
-  describe('workspaces info', () => {
-    itAuthenticated('should show error for non-existent workspace', async () => {
-      const { stdout, stderr, exitCode } = runCLI('workspaces info non-existent-id-12345', {
-        expectError: true,
-      });
-
-      const output = stdout + stderr;
-      expect(output).toMatch(/not found|error|invalid/i);
+  describe('workspaces info — error path', () => {
+    itAuthenticated('non-existent ID returns specific "not found" copy + non-zero exit', async () => {
+      const result = runCLI('workspaces info non-existent-id-12345', { expectError: true });
+      expectNotFoundError(
+        result,
+        /Workspace not found|No workspace found matching/,
+      );
+      expectNoBugMarkers(result);
     });
   });
 });

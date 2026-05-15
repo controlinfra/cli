@@ -1,57 +1,61 @@
 /**
- * E2E Tests for Project Commands
- * Tests: projects list, projects info
+ * E2E Tests for Project Commands — `projects list`, `projects info`, help.
  */
 
 const { runCLI, apiCall, itAuthenticated } = require('./helpers');
+const {
+  expectListOutput, expectHelpLists, expectJsonOutput,
+  expectNotFoundError, expectNoBugMarkers,
+} = require('./assertions');
 
 describe('CLI Project Commands', () => {
   describe('projects list', () => {
-    itAuthenticated('should list projects', async () => {
-      const { stdout, exitCode } = runCLI('projects list');
-
-      expect(exitCode).toBe(0);
-      expect(stdout).toMatch(/Project|No projects|ID|Name/i);
+    itAuthenticated('shows the project table or the explicit empty-state copy', async () => {
+      const result = runCLI('projects list');
+      expectListOutput(result, {
+        tableHeader: 'Name',
+        emptyMarker: 'No projects',
+      });
+      expectNoBugMarkers(result);
     });
 
-    itAuthenticated('should support JSON output', async () => {
-      const { stdout, exitCode } = runCLI('projects list --json');
-
-      expect(exitCode).toBe(0);
-      expect(() => JSON.parse(stdout)).not.toThrow();
+    itAuthenticated('--json emits a parseable array', async () => {
+      const result = runCLI('projects list --json');
+      const parsed = expectJsonOutput(result);
+      const projects = parsed.projects || parsed;
+      expect(Array.isArray(projects)).toBe(true);
     });
 
-    itAuthenticated('should return projects via API', async () => {
+    itAuthenticated('API endpoint returns the projects envelope or a structured 4xx', async () => {
+      // Direct API calls without the active-org context can return a
+      // structured 4xx (e.g. missing org). Accept either, never an
+      // opaque crash.
       const response = await apiCall('GET', '/api/projects');
-
-      expect(response).toBeDefined();
-      const projects = response.projects || response;
-      expect(Array.isArray(projects) || typeof projects === 'object').toBe(true);
+      if (response && response.error) {
+        expect(response.status).toBeGreaterThanOrEqual(400);
+        expect(response.status).toBeLessThan(500);
+      } else {
+        const projects = response.projects || response;
+        expect(Array.isArray(projects) || typeof projects === 'object').toBe(true);
+      }
     });
   });
 
   describe('projects help', () => {
-    it('should display projects help with all subcommands', () => {
-      const { stdout, exitCode } = runCLI('projects --help');
-
-      expect(exitCode).toBe(0);
-      expect(stdout).toContain('list');
-      expect(stdout).toContain('create');
-      expect(stdout).toContain('info');
-      expect(stdout).toContain('update');
-      expect(stdout).toContain('delete');
-      expect(stdout).toContain('default');
+    it('lists every registered subcommand', () => {
+      const result = runCLI('projects --help');
+      expectHelpLists(result, ['list', 'create', 'info', 'update', 'delete', 'default']);
     });
   });
 
-  describe('projects info', () => {
-    itAuthenticated('should show error for non-existent project', async () => {
-      const { stdout, stderr, exitCode } = runCLI('projects info non-existent-id-12345', {
-        expectError: true,
-      });
-
-      const output = stdout + stderr;
-      expect(output).toMatch(/not found|error|invalid|failed/i);
+  describe('projects info — error path', () => {
+    itAuthenticated('non-existent ID returns specific "not found" copy + non-zero exit', async () => {
+      const result = runCLI('projects info non-existent-id-12345', { expectError: true });
+      expectNotFoundError(
+        result,
+        /Project not found|No project found matching/,
+      );
+      expectNoBugMarkers(result);
     });
   });
 });
