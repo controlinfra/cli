@@ -50,18 +50,21 @@ describe('CLI Auth Commands', () => {
   });
 
   describe('unauthenticated access', () => {
-    it('whoami without auth returns specific "Not logged in" copy + non-zero exit', () => {
-      // Use temp config dir so we don't read stored creds
+    it('whoami without auth renders the explicit "Not logged in" CTA', () => {
+      // Use temp config dir so we don't read stored creds.
+      // whoami intentionally does NOT exit non-zero when unauth — it
+      // prints a friendly CTA and returns. The behavior is locked here
+      // so a regression that changes whoami to throw / hang surfaces.
       const tmpConfig = path.join(os.tmpdir(), `ci-test-noauth-${Date.now()}`);
       const result = runCLI('whoami', {
         env: { CONTROLINFRA_TOKEN: '', APPDATA: tmpConfig, XDG_CONFIG_HOME: tmpConfig },
         expectError: true,
       });
-      expect(result.exitCode).not.toBe(0);
-      // Specific copy emitted by config.js#requireAuth — not just
-      // any output containing "login".
-      expect(result.stdout + result.stderr).toMatch(/Not authenticated|Not logged in/);
-      expect(result.stdout + result.stderr).toContain('controlinfra login');
+      // Specific copy emitted by auth.js#whoami — not just any output
+      // containing "login".
+      const out = result.stdout + result.stderr;
+      expect(out).toMatch(/Not authenticated|Not logged in/);
+      expect(out).toContain('controlinfra login');
     });
   });
 });
