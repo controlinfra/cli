@@ -17,7 +17,6 @@
  */
 
 const { runCLI, itAuthenticated } = require('./helpers');
-const { expectSuccessOrPermissionError } = require('./assertions');
 
 // ── Slack ────────────────────────────────────────────────────────────
 describe('CLI Slack Commands', () => {
