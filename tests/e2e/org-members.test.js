@@ -87,8 +87,10 @@ describe('Organization member management lifecycle', () => {
   itAuthenticated('invite emits "Invitation sent to <email>" on success', () => {
     const result = runCLI(`orgs invite ${orgId} test@example.com`, { expectError: true });
     expectSuccessOrPermissionError(result, () => {
-      expect(result.stdout).toContain('test@example.com');
-      expect(result.stdout).toMatch(/Invitation sent|invitation created/i);
+      // spinner.succeed writes to stderr — assert on combined output.
+      const out = result.stdout + result.stderr;
+      expect(out).toContain('test@example.com');
+      expect(out).toMatch(/Invitation sent|invitation created/i);
     });
   });
 
