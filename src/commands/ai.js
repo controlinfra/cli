@@ -135,19 +135,19 @@ async function verify(_options) {
       return;
     }
 
-    // Try to verify the stored key
-    if (data.provider === 'anthropic') {
-      // Get and verify
-      await integrations.verifyAnthropicKey(data.apiKey);
-    } else if (data.provider === 'openai') {
-      await integrations.verifyOpenaiKey(data.apiKey);
-    }
-
-    spinner.succeed(`${data.provider} API key is valid`);
+    // We can't re-verify the stored key without it — the server
+    // doesn't return key material (correctly). Verification ran at
+    // save time via the /verify endpoint, and the provider sub-system
+    // flags failures via the org-level credential health check. To
+    // re-verify against the provider now, the user can re-issue the
+    // `ai use <provider> --key <new>` command which runs the live
+    // verify path again.
+    spinner.succeed(`${data.provider} API key is configured`);
+    console.log(chalk.dim('\nThe key was verified against the provider when saved.'));
+    console.log(chalk.dim('To re-verify with a fresh key, run:'), brand.cyan(`controlinfra ai use ${data.provider} --key <new-key>\n`));
   } catch (error) {
-    spinner.fail('API key verification failed');
+    spinner.fail('Failed to check AI provider');
     outputError(error.message);
-    console.log(chalk.dim('\nUpdate your key with:'), brand.cyan('controlinfra ai use <provider> --key <new-key>\n'));
     process.exit(1);
   }
 }

@@ -78,11 +78,35 @@ const integrations = {
   // AI Provider
   async getAiProvider() {
     const { data } = await getClient().get('/api/auth/ai-provider');
+    // Server returns { success, settings: { defaultProvider,
+    // hasAnthropicKey, hasOpenAIKey } } but CLI commands read
+    // data.provider / data.hasCustomKey. Normalize at the API
+    // boundary so command files stay readable; without this
+    // normalization, `ai status` always shows "default / No" even
+    // when an API key is saved.
+    if (data?.settings) {
+      const s = data.settings;
+      const hasCustomKey = !!(s.hasAnthropicKey || s.hasOpenAIKey);
+      return {
+        provider: s.defaultProvider,
+        hasCustomKey,
+        hasAnthropicKey: !!s.hasAnthropicKey,
+        hasOpenAIKey: !!s.hasOpenAIKey,
+      };
+    }
     return data;
   },
 
   async updateAiProvider(settings) {
-    const { data } = await getClient().put('/api/auth/ai-provider', settings);
+    // CLI commands call this as `updateAiProvider({ provider: 'anthropic' })`
+    // but the server's PUT /api/auth/ai-provider reads `defaultProvider`.
+    // Map at the boundary so legacy CLI call sites keep working. The
+    // server now accepts both keys (see ai-keys-openai.js fix), but
+    // sending the canonical name keeps logs clean.
+    const payload = settings?.provider && !settings?.defaultProvider
+      ? { ...settings, defaultProvider: settings.provider }
+      : settings;
+    const { data } = await getClient().put('/api/auth/ai-provider', payload);
     return data;
   },
 

@@ -38,13 +38,27 @@ function parseServiceAccountJson(filePath) {
 /**
  * Setup GCP credentials
  */
+function isValidWifAudience(value) {
+  // GCP WIF audience canonical form. Validating client-side catches typos
+  // (missing leading //, wrong path segment order) before the API rejects.
+  return /^\/\/iam\.googleapis\.com\/projects\/\d+\/locations\/global\/workloadIdentityPools\/[^/]+\/providers\/[^/]+$/.test(value);
+}
+
 async function setup(options) {
   requireAuth();
 
-  let authMethod = options.workloadIdentity ? 'workload_identity' : 'service_account';
+  // Precedence: explicit --workload-identity-federation > --workload-identity > service_account.
+  // WIF takes priority because it's the more specific opt-in mode.
+  let authMethod;
+  if (options.workloadIdentityFederation) authMethod = 'workload_identity_federation';
+  else if (options.workloadIdentity) authMethod = 'workload_identity';
+  else authMethod = 'service_account';
+
   let projectId = options.projectId;
   let clientEmail = options.clientEmail;
   let privateKey = options.privateKey;
+  let audience = options.audience;
+  let serviceAccountEmail = options.serviceAccountEmail;
 
   if (options.jsonFile) {
     console.log(chalk.dim('\n  Importing from JSON file...\n'));
@@ -70,6 +84,34 @@ async function setup(options) {
         validate: (input) => !input || isValidProjectId(input) || 'Invalid Project ID format',
       }]);
       projectId = answers.projectId || undefined;
+    }
+  } else if (authMethod === 'workload_identity_federation') {
+    console.log(chalk.bold('\n  GCP Workload Identity Federation Setup\n'));
+    console.log(chalk.dim('  Zero-credential auth: Controlinfra mints a signed OIDC token,'));
+    console.log(chalk.dim('  GCP STS federates it, IAM impersonates your service account.\n'));
+    const prompts = [];
+    if (!projectId) {
+      prompts.push({ type: 'input', name: 'projectId', message: 'GCP Project ID:',
+        validate: (input) => isValidProjectId(input) || 'Invalid Project ID format' });
+    }
+    if (!audience) {
+      prompts.push({ type: 'input', name: 'audience',
+        message: 'WIF pool/provider audience (//iam.googleapis.com/projects/<num>/locations/global/workloadIdentityPools/<pool>/providers/<provider>):',
+        validate: (input) => isValidWifAudience(input) || 'Invalid audience format' });
+    }
+    if (!serviceAccountEmail) {
+      prompts.push({ type: 'input', name: 'serviceAccountEmail', message: 'Service Account to impersonate:',
+        validate: (input) => isValidServiceAccountEmail(input) || 'Must be a valid service account email' });
+    }
+    if (prompts.length > 0) {
+      const answers = await inquirer.prompt(prompts);
+      projectId = projectId || answers.projectId;
+      audience = audience || answers.audience;
+      serviceAccountEmail = serviceAccountEmail || answers.serviceAccountEmail;
+    }
+    if (!isValidWifAudience(audience)) {
+      outputError('Invalid WIF audience format. Expected: //iam.googleapis.com/projects/<num>/locations/global/workloadIdentityPools/<pool>/providers/<provider>');
+      process.exit(1);
     }
   } else if (!projectId || !clientEmail || !privateKey) {
     console.log(chalk.bold('\n  GCP Service Account Setup\n'));
@@ -121,6 +163,8 @@ async function setup(options) {
     if (projectId) credentials.projectId = projectId;
     if (clientEmail) credentials.clientEmail = clientEmail;
     if (privateKey) credentials.privateKey = privateKey;
+    if (audience) credentials.audience = audience;
+    if (serviceAccountEmail) credentials.serviceAccountEmail = serviceAccountEmail;
 
     await integrations.saveGcpCredentials(credentials);
     spinner.succeed('GCP credentials saved');

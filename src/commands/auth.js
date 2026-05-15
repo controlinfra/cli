@@ -194,6 +194,12 @@ async function logout() {
   }
 
   const user = getUser();
+  // Detect env-var auth BEFORE we clear the stored config — clearAuth
+  // only touches disk-resident creds; an exported CONTROLINFRA_TOKEN
+  // env var survives and silently re-authenticates the next command,
+  // making "Logged out successfully" misleading.
+  const hasEnvToken = !!process.env.CONTROLINFRA_TOKEN;
+
   const spinner = createSpinner('Logging out...').start();
 
   try {
@@ -207,6 +213,11 @@ async function logout() {
 
   if (user?.displayName) {
     console.log(chalk.dim(`\nGoodbye, ${user.displayName}!\n`));
+  }
+
+  if (hasEnvToken) {
+    console.log(chalk.yellow('  Note: CONTROLINFRA_TOKEN env var is still set.'));
+    console.log(chalk.dim(`  To fully log out, unset it in your shell:\n    ${chalk.cyan('unset CONTROLINFRA_TOKEN')}\n`));
   }
 }
 

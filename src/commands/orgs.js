@@ -36,15 +36,26 @@ async function list(options, command) {
     }
 
     console.log();
+    // memberCount lives at `org.stats.memberCount` per the org schema —
+    // not the flat `org.memberCount` the CLI used to read. Fall back
+    // through the populated members array so the count is right even
+    // if `stats` is missing (e.g. legacy docs that pre-date the
+    // `stats` denormalisation).
     outputTable(
       ['ID', 'Name', 'Role', 'Members', 'Created'],
-      orgList.map((org) => [
-        chalk.dim((org.id || org._id)?.slice(-8) || '-'),
-        brand.cyan(org.name || '-'),
-        org.role || org.userRole || '-',
-        org.memberCount || '-',
-        formatRelativeTime(org.createdAt),
-      ]),
+      orgList.map((org) => {
+        const memberCount = org.stats?.memberCount
+          ?? (Array.isArray(org.members) ? org.members.length : null)
+          ?? org.memberCount
+          ?? '-';
+        return [
+          chalk.dim((org.id || org._id)?.slice(-8) || '-'),
+          brand.cyan(org.name || '-'),
+          org.role || org.userRole || '-',
+          memberCount,
+          formatRelativeTime(org.createdAt),
+        ];
+      }),
       options,
     );
     console.log();
@@ -106,12 +117,29 @@ async function info(id, options, command) {
       return;
     }
 
+    // Owner email lives nested in the members array (the entry whose
+    // role === 'owner', with populated `userId` carrying email).
+    // `org.owner` / `org.ownerEmail` aren't returned by the server;
+    // they were CLI hallucinations. Walk members → find owner →
+    // pull from populated userId, then fall back legacy paths.
+    const populated = (m) => (m?.userId && typeof m.userId === 'object') ? m.userId : (m?.user || {});
+    const ownerMember = Array.isArray(org.members) ? org.members.find(m => m.role === 'owner') : null;
+    const ownerEmail = populated(ownerMember).email
+      || populated(ownerMember).displayName
+      || populated(ownerMember).username
+      || org.owner?.email
+      || org.ownerEmail
+      || '-';
+    const memberCount = org.stats?.memberCount
+      ?? (Array.isArray(org.members) ? org.members.length : null)
+      ?? org.memberCount
+      ?? 0;
     console.log();
     outputBox('Organization Details', [
       `ID:          ${chalk.dim(org.id || org._id)}`,
       `Name:        ${brand.cyan(org.name || '-')}`,
-      `Owner:       ${org.owner?.email || org.ownerEmail || '-'}`,
-      `Members:     ${org.memberCount || 0}`,
+      `Owner:       ${ownerEmail}`,
+      `Members:     ${memberCount}`,
       `Created:     ${formatRelativeTime(org.createdAt)}`,
     ].join('\n'));
     console.log();
@@ -209,6 +237,7 @@ async function deleteOrg(id, options) {
 async function resolveOrgId(partialId) {
   const data = await orgs.list();
   const orgList = data.organizations || data.orgs || data || [];
+  const needle = (partialId || '').toLowerCase();
 
   const exactMatch = orgList.find((o) => (o.id || o._id) === partialId);
   if (exactMatch) return exactMatch.id || exactMatch._id;
@@ -216,8 +245,16 @@ async function resolveOrgId(partialId) {
   const partialMatch = orgList.find((o) => (o.id || o._id)?.endsWith(partialId));
   if (partialMatch) return partialMatch.id || partialMatch._id;
 
+  // Slug match — slugs are unique per org and appear in API responses, so
+  // accepting them as a switch arg is consistent with how a user thinks
+  // about org identity. Exact match preferred over name partial-match
+  // so `controlinfra orgs switch acme` resolves to slug "acme" not to
+  // name "Acme Coyote Operations" if both exist.
+  const slugMatch = orgList.find((o) => (o.slug || '').toLowerCase() === needle);
+  if (slugMatch) return slugMatch.id || slugMatch._id;
+
   const nameMatch = orgList.find(
-    (o) => (o.name || '').toLowerCase().includes(partialId.toLowerCase()),
+    (o) => (o.name || '').toLowerCase().includes(needle),
   );
   if (nameMatch) return nameMatch.id || nameMatch._id;
 
@@ -250,11 +287,17 @@ async function switchOrg(idOrName, _options) {
     let target;
 
     if (idOrName) {
-      // Collect all matches to detect ambiguity
+      // Collect all matches to detect ambiguity. Accepts ID, ID-suffix,
+      // name (case-insensitive exact), and slug — slugs appear in API
+      // responses (and in `orgs info` output) so users reasonably
+      // expect to switch by them too. resolveOrgId() does the same
+      // for read commands; this branch is `switchOrg`'s parallel impl.
+      const needle = idOrName.toLowerCase();
       const matches = orgList.filter((o) => {
         const oid = o.id || o._id || '';
         const name = (o.name || '').toLowerCase();
-        return oid === idOrName || oid.endsWith(idOrName) || name === idOrName.toLowerCase();
+        const slug = (o.slug || '').toLowerCase();
+        return oid === idOrName || oid.endsWith(idOrName) || name === needle || slug === needle;
       });
       if (matches.length === 1) {
         target = matches[0];

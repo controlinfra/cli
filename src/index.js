@@ -36,6 +36,25 @@ program.configureOutput({
   },
 });
 
+// --quiet honors itself: suppress non-essential output by swallowing
+// console.log / console.info early. Errors (console.error, spinner.fail
+// → stderr) still print. --json overrides --quiet so machine-readable
+// output isn't silently lost. Detection runs at preAction time so
+// every sub-command picks up the global flag without needing to read
+// it individually (the helper existed in config.js but no command was
+// wired to it, so the flag was effectively ignored).
+program.hook('preAction', (thisCommand) => {
+  const opts = thisCommand.opts();
+  if (opts.quiet && !opts.json) {
+    console.log = () => {};
+    console.info = () => {};
+    // createSpinner in output.js checks this env var so ora spinners
+    // (which write to stderr and would survive console.log overrides)
+    // are silenced too. Env var is the simplest cross-module signal.
+    process.env.__CLI_QUIET = '1';
+  }
+});
+
 // Register all command groups
 registerAuth(program);
 registerRepos(program);

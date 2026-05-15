@@ -144,7 +144,17 @@ async function waitForScan(scanId, options = {}) {
           await handleCompletedScan(scanId, scan, options);
         } else if (scan.status === 'failed') {
           spinner.fail('Scan failed');
-          if (scan.error) console.log(chalk.red(`\nError: ${scan.error}\n`));
+          if (scan.error) {
+            // scan.error can be a string OR an object (newer scans store
+            // { message, phase, stage } structured errors). Stringify
+            // either shape readably — without this, the user sees the
+            // literal `[object Object]` when the scan stored a structured
+            // failure.
+            const errMsg = typeof scan.error === 'string'
+              ? scan.error
+              : (scan.error.message || scan.error.error || JSON.stringify(scan.error));
+            console.log(chalk.red(`\nError: ${errMsg}\n`));
+          }
           process.exit(2);
         } else {
           spinner.warn('Scan was cancelled');

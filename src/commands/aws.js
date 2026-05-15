@@ -134,21 +134,27 @@ async function test(_options) {
 /**
  * Remove AWS credentials
  */
-async function remove(_options) {
+async function remove(options) {
   requireAuth();
 
-  const { confirm } = await inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'confirm',
-      message: 'Are you sure you want to remove AWS credentials?',
-      default: false,
-    },
-  ]);
+  // --force skips the interactive confirm — matches `workspaces rm
+  // --force`, `projects delete --force`, `orgs delete --force`,
+  // `scan delete --force`, `repos remove --force`. Without it the
+  // command can't be used in CI/CD where stdin is closed.
+  if (!options?.force) {
+    const { confirm } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'confirm',
+        message: 'Are you sure you want to remove AWS credentials?',
+        default: false,
+      },
+    ]);
 
-  if (!confirm) {
-    console.log(chalk.dim('Cancelled\n'));
-    return;
+    if (!confirm) {
+      console.log(chalk.dim('Cancelled\n'));
+      return;
+    }
   }
 
   const spinner = createSpinner('Removing AWS credentials...').start();

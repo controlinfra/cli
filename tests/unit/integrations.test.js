@@ -256,11 +256,15 @@ describe('ai', () => {
     await ai.verify({});
     expect(mockSpinner.warn).toHaveBeenCalledWith('No custom API key configured');
   });
-  it('verify validates stored anthropic key', async () => {
-    api.integrations.getAiProvider.mockResolvedValue({ provider: 'anthropic', hasCustomKey: true, apiKey: 'sk-ant-k' });
-    api.integrations.verifyAnthropicKey.mockResolvedValue({});
+  it('verify reports configured state without round-tripping the saved key', async () => {
+    // After the audit fix, `ai verify` no longer tries to re-verify the
+    // stored key against the provider — the server doesn't return key
+    // material (correctly), so passing `data.apiKey` to verifyAnthropicKey
+    // was sending `undefined` and printing a misleading failure.
+    api.integrations.getAiProvider.mockResolvedValue({ provider: 'anthropic', hasCustomKey: true });
     await ai.verify({});
-    expect(mockSpinner.succeed).toHaveBeenCalledWith('anthropic API key is valid');
+    expect(mockSpinner.succeed).toHaveBeenCalledWith('anthropic API key is configured');
+    expect(api.integrations.verifyAnthropicKey).not.toHaveBeenCalled();
   });
   it('remove cancels when declined', async () => {
     inquirer.prompt.mockResolvedValue({ confirm: false });

@@ -36,14 +36,25 @@ async function members(orgId, options, command) {
     }
 
     console.log();
+    // Members are populated by the server via `populate('members.userId', ...)`.
+    // After populate, the user document lives at `m.userId.<field>`, NOT
+    // `m.user.<field>` (the old field name we used to write to). Read
+    // the populated user doc first, then fall back to the legacy `m.user`
+    // / flat `m.displayName` shapes so older fixtures + JSON dumps still
+    // render correctly.
     outputTable(
       ['User', 'Email', 'Role', 'Joined'],
-      memberList.map((m) => [
-        brand.cyan(m.user?.displayName || m.displayName || '-'),
-        m.user?.email || m.email || '-',
-        m.role || 'member',
-        formatRelativeTime(m.joinedAt || m.createdAt),
-      ]),
+      memberList.map((m) => {
+        const u = (m.userId && typeof m.userId === 'object') ? m.userId : (m.user || {});
+        const displayName = u.displayName || u.username || m.displayName || '-';
+        const email = u.email || m.email || '-';
+        return [
+          brand.cyan(displayName),
+          email,
+          m.role || 'member',
+          formatRelativeTime(m.joinedAt || m.createdAt),
+        ];
+      }),
       options,
     );
     console.log();
@@ -134,15 +145,25 @@ async function invitations(orgId, options, command) {
     }
 
     console.log();
+    // Invite-link rows (created by `orgs invite-link <orgId>`) have no
+    // email — they're a shareable token, not a per-recipient invite.
+    // Showing "-" was ambiguous; "Link invitation" makes the row's
+    // nature obvious so users don't think the email got lost. The
+    // server marks link rows with `linkOnly: true` (or absent email).
     outputTable(
       ['ID', 'Email', 'Role', 'Status', 'Sent'],
-      inviteList.map((inv) => [
-        chalk.dim((inv.id || inv._id)?.slice(-8) || '-'),
-        brand.cyan(inv.email || '-'),
-        inv.role || 'member',
-        inv.status || 'pending',
-        formatRelativeTime(inv.createdAt),
-      ]),
+      inviteList.map((inv) => {
+        const email = inv.email
+          ? brand.cyan(inv.email)
+          : chalk.dim('(link invitation)');
+        return [
+          chalk.dim((inv.id || inv._id)?.slice(-8) || '-'),
+          email,
+          inv.role || 'member',
+          inv.status || 'pending',
+          formatRelativeTime(inv.createdAt),
+        ];
+      }),
       options,
     );
     console.log();
