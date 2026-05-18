@@ -33,7 +33,7 @@ const createClient = () => {
   // Handle response errors
   client.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
       if (error.response) {
         const { status, data } = error.response;
 
@@ -51,6 +51,39 @@ const createClient = () => {
 
         if (status === 404) {
           const message = data?.error || data?.message || 'Resource not found';
+
+          // Stale-orgId self-heal. If the API said the org doesn't
+          // exist (deleted org, or a leftover orgId from a previous
+          // account in the config file), retry the request ONCE with
+          // the logged-in user's defaultOrgId in the header.
+          //
+          // Deliberately does NOT persist the fallback to disk —
+          // a user who intentionally ran `controlinfra orgs switch`
+          // to org X (and currently lacks access, or whose request
+          // races with a membership change) would otherwise have
+          // their selection silently clobbered. The retry covers
+          // them for this single request; their persisted choice
+          // stays intact so they see the real error on the next
+          // call and can react.
+          //
+          // Single-retry guard (_orgFallbackTried) prevents loops if
+          // the fallback also 404s.
+          const isOrgMissing = /organization not found/i.test(message);
+          if (isOrgMissing && !error.config?._orgFallbackTried) {
+            const { getUser, config: cliConfig } = require('../config');
+            const user = getUser();
+            const fallbackOrgId = user?.defaultOrgId;
+            const currentOrgId = cliConfig.get('orgId');
+            if (fallbackOrgId && String(fallbackOrgId) !== String(currentOrgId)) {
+              console.error(chalk.yellow(`\nWarning: org ${currentOrgId} not found — retrying this request with your default org (${fallbackOrgId}).`));
+              console.error(chalk.dim(`To make the switch permanent, run: ${chalk.yellow(`controlinfra orgs switch ${fallbackOrgId}`)}\n`));
+              error.config._orgFallbackTried = true;
+              error.config.headers = error.config.headers || {};
+              error.config.headers['X-Org-Id'] = fallbackOrgId;
+              return client.request(error.config);
+            }
+          }
+
           throw new Error(message);
         }
 
