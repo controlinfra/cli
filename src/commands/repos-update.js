@@ -72,14 +72,11 @@ async function update(id, options, command) {
       updates.cloudProvider = options.cloudProvider;
     }
 
-    // Runner config — server schema field is `preferredRunnerId`,
-    // not `runnerId`. Sending the wrong name caused the field to be
-    // silently dropped and any available self-hosted runner in the
-    // org would grab the job (including wrong-cloud runners).
+    // Runner config
     if (options.runnerType) {
       updates.runnerConfig = { type: options.runnerType };
       if (options.runnerType === 'self-hosted' && options.runnerId) {
-        updates.runnerConfig.preferredRunnerId = options.runnerId;
+        updates.runnerConfig.runnerId = options.runnerId;
       }
     }
 

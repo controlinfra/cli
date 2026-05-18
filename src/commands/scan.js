@@ -218,25 +218,7 @@ async function logs(scanId, options) {
 
     if (scan.status === 'failed' && scan.error) {
       console.log(chalk.red('\nError:'));
-      // scan.error is { message, phase, parsed: { title, description,
-      // suggestions } } from the server. Stringifying an object gives
-      // "[object Object]" — useless. Render the meaningful fields,
-      // falling back to JSON for unexpected shapes.
-      const err = scan.error;
-      if (typeof err === 'string') {
-        console.log(`  ${err}`);
-      } else if (err && typeof err === 'object') {
-        if (err.parsed?.title) console.log(`  ${chalk.bold(err.parsed.title)}`);
-        if (err.parsed?.description) console.log(`  ${err.parsed.description}`);
-        if (err.message) console.log(`  ${chalk.dim('message:')} ${err.message}`);
-        if (err.phase) console.log(`  ${chalk.dim('phase:')}   ${err.phase}`);
-        if (Array.isArray(err.parsed?.suggestions) && err.parsed.suggestions.length) {
-          console.log(chalk.dim('  Suggestions:'));
-          for (const s of err.parsed.suggestions) console.log(`    - ${s}`);
-        }
-      } else {
-        console.log(`  ${JSON.stringify(err)}`);
-      }
+      console.log(`  ${scan.error}`);
     }
 
     if (scan.planOutput) {

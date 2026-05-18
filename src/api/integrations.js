@@ -28,14 +28,6 @@ const integrations = {
     return data;
   },
 
-  // Returns decrypted creds so the CLI can embed them in a repo
-  // create payload (matches the browser wizard's behavior — repo
-  // configs carry their own copy of the org's creds at save time).
-  async getAwsCredentialsFull() {
-    const { data } = await getClient().get('/api/auth/aws-credentials/full');
-    return data;
-  },
-
   async saveAwsCredentials(credentials) {
     const { data } = await getClient().post('/api/auth/aws-credentials', credentials);
     return data;

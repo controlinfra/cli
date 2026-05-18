@@ -17,18 +17,14 @@ const {
 async function list(options, command) {
   requireAuth();
 
-  // Check --json BEFORE starting the spinner. Spinner output goes to
-  // stdout and would otherwise contaminate JSON output for
-  // automation/piping scenarios. Same pattern any other --json-aware
-  // command should follow.
-  const isJson = command?.parent?.parent?.opts()?.json;
-  const spinner = isJson ? null : createSpinner('Fetching repositories...').start();
+  const spinner = createSpinner('Fetching repositories...').start();
 
   try {
     const data = await repos.list({ workspace: options.workspace });
     const repoList = data.configs || data.repositories || data || [];
-    if (spinner) spinner.stop();
+    spinner.stop();
 
+    const isJson = command?.parent?.parent?.opts()?.json;
     if (isJson) {
       console.log(JSON.stringify(repoList, null, 2));
       return;
@@ -41,15 +37,11 @@ async function list(options, command) {
     }
 
     console.log();
-    // Include Provider + Directory so multiple repo configs sharing
-    // the same fullName (one per cloud/env combo) can be told apart.
     outputTable(
-      ['ID', 'Repository', 'Provider', 'Directory', 'Branch', 'Status', 'Last Scan'],
+      ['ID', 'Repository', 'Branch', 'Status', 'Last Scan'],
       repoList.map((repo) => [
         chalk.dim(repo._id?.slice(-8) || '-'),
         brand.cyan(repo.repository?.fullName || repo.fullName || '-'),
-        repo.cloudProvider || '-',
-        repo.terraformConfig?.directory || '.',
         repo.branch || 'main',
         colorStatus(repo.lastScanStatus || 'pending'),
         formatRelativeTime(repo.lastScanAt),
@@ -58,7 +50,7 @@ async function list(options, command) {
     );
     console.log();
   } catch (error) {
-    if (spinner) spinner.fail('Failed to fetch repositories');
+    spinner.fail('Failed to fetch repositories');
     outputError(error.message);
     process.exit(1);
   }

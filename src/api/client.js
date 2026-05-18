@@ -33,7 +33,7 @@ const createClient = () => {
   // Handle response errors
   client.interceptors.response.use(
     (response) => response,
-    async (error) => {
+    (error) => {
       if (error.response) {
         const { status, data } = error.response;
 
@@ -51,28 +51,6 @@ const createClient = () => {
 
         if (status === 404) {
           const message = data?.error || data?.message || 'Resource not found';
-
-          // Stale-orgId self-heal. If the API said the org doesn't
-          // exist (deleted org, or a leftover orgId from a previous
-          // account in the config file), swap to the logged-in
-          // user's defaultOrgId and retry the request once. The
-          // single-retry guard (_orgFallbackTried) prevents loops
-          // if the fallback also 404s.
-          const isOrgMissing = /organization not found/i.test(message);
-          if (isOrgMissing && !error.config?._orgFallbackTried) {
-            const { getUser, config: cliConfig } = require('../config');
-            const user = getUser();
-            const fallbackOrgId = user?.defaultOrgId;
-            const currentOrgId = cliConfig.get('orgId');
-            if (fallbackOrgId && String(fallbackOrgId) !== String(currentOrgId)) {
-              cliConfig.set('orgId', fallbackOrgId);
-              error.config._orgFallbackTried = true;
-              error.config.headers = error.config.headers || {};
-              error.config.headers['X-Org-Id'] = fallbackOrgId;
-              return client.request(error.config);
-            }
-          }
-
           throw new Error(message);
         }
 
