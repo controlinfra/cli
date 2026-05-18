@@ -75,11 +75,24 @@ function isAuthenticated() {
 
 /**
  * Save authentication credentials
+ *
+ * Also resets `orgId` to the user's `defaultOrgId` whenever a new
+ * user payload is saved. Without this, a fresh login from a clean
+ * machine inherits whatever orgId was in the config file from a
+ * previous account / test run, and every subsequent API call sends
+ * `X-Org-Id` pointing at an org the new user has no access to →
+ * "Organization not found." Tying orgId to whoever just logged in
+ * makes the post-login state coherent.
  */
 function saveAuth({ token, refreshToken, user }) {
   if (token) config.set('token', token);
   if (refreshToken) config.set('refreshToken', refreshToken);
-  if (user) config.set('user', user);
+  if (user) {
+    config.set('user', user);
+    if (user.defaultOrgId) {
+      config.set('orgId', user.defaultOrgId);
+    }
+  }
 }
 
 /**
