@@ -4,10 +4,40 @@ const { requireAuth } = require('../config');
 const { createSpinner, outputError, brand } = require('../output');
 
 /**
- * Build cloud-provider config from CLI options
+ * True when the user supplied any provider-specific cred flag on the
+ * command line. Used to distinguish "I want to override the workspace
+ * creds for this repo" (build a config block) from "use whatever the
+ * workspace already has wired up" (omit the config block entirely so
+ * the server falls back to org / CloudAccount creds).
+ */
+function hasInlineCreds(cloudProvider, options) {
+  if (cloudProvider === 'aws') {
+    return !!(options.accessKey || options.secretKey || options.roleArn
+      || options.authMethod === 'instance_profile' || options.authMethod === 'assume_role');
+  }
+  if (cloudProvider === 'azure') {
+    return !!(options.subscriptionId || options.tenantId || options.clientId || options.clientSecret);
+  }
+  if (cloudProvider === 'gcp') {
+    return !!(options.gcpProjectId || options.gcpClientEmail || options.gcpPrivateKey || options.gcpJsonFile);
+  }
+  return false;
+}
+
+/**
+ * Build cloud-provider config from CLI options.
+ * When a workspace is supplied AND no cred flags were passed, return
+ * {} — the server will inherit creds from the workspace (which in
+ * turn inherits from the org's CloudAccount). Requiring creds at the
+ * CLI layer duplicates server validation and blocks the common case
+ * where an org has already configured cloud creds in Settings.
  */
 function buildCloudConfig(cloudProvider, options) {
   const runnerType = options.runnerType || 'cloud';
+
+  if (options.workspace && !hasInlineCreds(cloudProvider, options)) {
+    return {};
+  }
 
   if (cloudProvider === 'aws') {
     return buildAwsConfig(options, runnerType);
@@ -186,8 +216,11 @@ async function add(repository, options) {
     }
 
     const runnerConfig = { type: runnerType };
+    // Server schema field is `preferredRunnerId`, not `runnerId`.
+    // Sending the wrong name lets any self-hosted runner in the org
+    // pick up the scan (cross-cloud risk).
     if (runnerType === 'self-hosted' && options.runnerId) {
-      runnerConfig.runnerId = options.runnerId;
+      runnerConfig.preferredRunnerId = options.runnerId;
     }
 
     spinner.text = `Adding ${repository}...`;

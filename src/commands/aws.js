@@ -85,12 +85,32 @@ async function status(options, command) {
     }
 
     console.log();
-    if (data.configured || data.accessKeyId) {
-      outputBox('AWS Credentials', [
+    // The endpoint shape was changed when CloudAccount support landed
+    // (multi-account + assume_role auth). It now returns:
+    //   { success, hasCredentials, credentials: { authMethod, region,
+    //     accessKeyId?, roleArn?, accountId? }, source }
+    // The CLI used to check data.configured / data.accessKeyId — both
+    // are gone from the new shape, so this fell into the "not configured"
+    // branch even when an assume_role account was wired up. Read the
+    // real fields now.
+    const creds = data.credentials || {};
+    if (data.hasCredentials || data.configured || creds.accessKeyId || creds.roleArn) {
+      const authMethod = creds.authMethod || 'credentials';
+      const region = creds.region || data.region || 'us-east-1';
+      const lines = [
         `Status:      ${chalk.green('Configured')}`,
-        `Access Key:  ${chalk.dim(maskAccessKey(data.accessKeyId))}`,
-        `Region:      ${data.region || 'us-east-1'}`,
-      ].join('\n'));
+        `Auth method: ${authMethod}`,
+      ];
+      if (authMethod === 'assume_role' && creds.roleArn) {
+        // roleArn is encrypted on the wire; only display the suffix.
+        lines.push(`Role ARN:    ${chalk.dim('(encrypted)')}`);
+      } else if (creds.accessKeyId) {
+        lines.push(`Access Key:  ${chalk.dim(maskAccessKey(creds.accessKeyId))}`);
+      }
+      if (creds.accountId) lines.push(`Account ID:  ${creds.accountId}`);
+      if (creds.accountName) lines.push(`Account:     ${creds.accountName}`);
+      lines.push(`Region:      ${region}`);
+      outputBox('AWS Credentials', lines.join('\n'));
     } else {
       console.log(chalk.yellow('AWS credentials not configured\n'));
       console.log(chalk.dim('Set up with:'), brand.cyan('controlinfra aws setup\n'));
