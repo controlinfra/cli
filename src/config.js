@@ -74,34 +74,46 @@ function isAuthenticated() {
 }
 
 /**
- * Save authentication credentials
+ * Save authentication credentials.
  *
- * Also resets `orgId` to the user's `defaultOrgId` whenever a new
- * user payload is saved. Without this, a fresh login from a clean
- * machine inherits whatever orgId was in the config file from a
- * previous account / test run, and every subsequent API call sends
- * `X-Org-Id` pointing at an org the new user has no access to →
- * "Organization not found." Tying orgId to whoever just logged in
- * makes the post-login state coherent.
+ * `orgId` is seeded from `user.defaultOrgId` ONLY when no orgId is
+ * currently set (fresh machine, or just after `clearAuth`). On every
+ * subsequent saveAuth — most importantly the one inside
+ * src/commands/auth.js's `whoami`, which is called on every invocation
+ * to refresh the cached user — the existing orgId is preserved so a
+ * prior `controlinfra orgs switch` or `controlinfra config set orgId`
+ * is NOT silently reverted to the user's default.
+ *
+ * For the original "fresh login from a clean machine inherits a stale
+ * orgId from a previous account" failure mode, see `clearAuth` below —
+ * it now deletes `orgId` so post-logout re-login starts with a clean
+ * slate and the seed branch here runs.
  */
 function saveAuth({ token, refreshToken, user }) {
   if (token) config.set('token', token);
   if (refreshToken) config.set('refreshToken', refreshToken);
   if (user) {
     config.set('user', user);
-    if (user.defaultOrgId) {
+    if (user.defaultOrgId && !config.get('orgId')) {
       config.set('orgId', user.defaultOrgId);
     }
   }
 }
 
 /**
- * Clear authentication credentials
+ * Clear authentication credentials.
+ *
+ * Also clears `orgId` so a subsequent login re-seeds it from the new
+ * user's `defaultOrgId`. Without this, the stale orgId from a previous
+ * user persists past logout and saveAuth's "only seed when missing"
+ * rule would skip re-seeding — leaving the next user pointing at an
+ * org they may not have access to.
  */
 function clearAuth() {
   config.delete('token');
   config.delete('refreshToken');
   config.delete('user');
+  config.delete('orgId');
 }
 
 /**

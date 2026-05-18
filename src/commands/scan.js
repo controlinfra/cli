@@ -222,17 +222,42 @@ async function logs(scanId, options) {
       // suggestions } } from the server. Stringifying an object gives
       // "[object Object]" — useless. Render the meaningful fields,
       // falling back to JSON for unexpected shapes.
+      //
+      // The `rendered` flag catches the case where err is an object
+      // but none of the known fields are populated (e.g. `{}` or an
+      // unrecognised shape) — without it the user would see only the
+      // red "Error:" header with no detail. Falling back to JSON
+      // gives them SOMETHING to work with instead of a silent dead
+      // end. The outer `else` already handles non-object non-string
+      // values (numbers / booleans / etc.).
       const err = scan.error;
       if (typeof err === 'string') {
         console.log(`  ${err}`);
       } else if (err && typeof err === 'object') {
-        if (err.parsed?.title) console.log(`  ${chalk.bold(err.parsed.title)}`);
-        if (err.parsed?.description) console.log(`  ${err.parsed.description}`);
-        if (err.message) console.log(`  ${chalk.dim('message:')} ${err.message}`);
-        if (err.phase) console.log(`  ${chalk.dim('phase:')}   ${err.phase}`);
+        let rendered = false;
+        if (err.parsed?.title) {
+          console.log(`  ${chalk.bold(err.parsed.title)}`);
+          rendered = true;
+        }
+        if (err.parsed?.description) {
+          console.log(`  ${err.parsed.description}`);
+          rendered = true;
+        }
+        if (err.message) {
+          console.log(`  ${chalk.dim('message:')} ${err.message}`);
+          rendered = true;
+        }
+        if (err.phase) {
+          console.log(`  ${chalk.dim('phase:')}   ${err.phase}`);
+          rendered = true;
+        }
         if (Array.isArray(err.parsed?.suggestions) && err.parsed.suggestions.length) {
           console.log(chalk.dim('  Suggestions:'));
           for (const s of err.parsed.suggestions) console.log(`    - ${s}`);
+          rendered = true;
+        }
+        if (!rendered) {
+          console.log(`  ${JSON.stringify(err)}`);
         }
       } else {
         console.log(`  ${JSON.stringify(err)}`);
