@@ -51,13 +51,20 @@ describe('Projects CRUD lifecycle', () => {
   beforeAll(() => {
     projectId = findProjectId();
     if (!projectId) {
-      const { stdout } = runCLI(
+      const res = runCLI(
         `projects create ${PROJECT_NAME} --provider aws`,
         { expectError: true },
       );
-      const match = stdout.match(/Project ID:\s+([a-f0-9]{24})/i);
+      const match = res.stdout.match(/Project ID:\s+([a-f0-9]{24})/i);
       projectId = match ? match[1] : findProjectId();
       createdThisRun = !!projectId;
+      if (!projectId) {
+        // eslint-disable-next-line no-console
+        console.error(
+          `[projects beforeAll] create yielded no id (exit ${res.exitCode})\n` +
+          `  stdout: ${res.stdout}\n  stderr: ${res.stderr}`,
+        );
+      }
     }
   });
 
