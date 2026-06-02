@@ -111,6 +111,8 @@ describe('Projects CRUD lifecycle', () => {
     // project the server guard fires. Accept both, assert the guard message.
     const result = runCLI(`projects delete ${projectId} --force`, { expectError: true });
     if (result.exitCode === 0) {
+      // Clean delete (org had other projects) — still assert the success marker.
+      expect(result.stdout + result.stderr).toMatch(/Project deleted|deleted successfully/i);
       projectId = null;
       return;
     }
