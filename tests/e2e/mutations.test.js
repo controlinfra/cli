@@ -77,14 +77,16 @@ describe('Projects CRUD lifecycle', () => {
   itAuthenticated('list shows the created project by name', () => {
     const { stdout, exitCode } = runCLI('projects list');
     expect(exitCode).toBe(0);
-    expect(stdout).toContain(NAME_PREFIX);
+    // Assert the full unique name — the table auto-sizes columns (no wrap),
+    // so this is safe and won't pass on an unrelated leftover.
+    expect(stdout).toContain(PROJECT_NAME);
   });
 
   itAuthenticated('info renders the detail box with Name field populated', () => {
     const result = runCLI(`projects info ${projectId}`);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('Project Details');
-    expect(result.stdout).toContain(NAME_PREFIX);
+    expect(result.stdout).toContain(PROJECT_NAME);
     expectNoBugMarkers(result);
   });
 
