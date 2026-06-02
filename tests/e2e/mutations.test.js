@@ -21,44 +21,85 @@ const FAKE_ID = '000000000000000000000000';
 /*  Projects lifecycle                                                 */
 /* ------------------------------------------------------------------ */
 describe('Projects CRUD lifecycle', () => {
+  // The server forbids deleting an org's only project (asserted by the
+  // "only project guard" test below), so a created fixture can't be torn
+  // down when it's alone — it persists across runs. The suite is therefore
+  // IDEMPOTENT: it reuses test-e2e-project when it already exists, otherwise
+  // creates it, and the update test renames it back to the canonical name.
+  // This is what makes the scheduled job stable — the previous version used
+  // a fixed name it couldn't clean up, so run #2 onward hit a 400
+  // "A project with this name already exists" and the whole suite went red.
+  const PROJECT_NAME = 'test-e2e-project';
   let projectId;
+  let createdThisRun = false;
+
+  // Resolve the fixture's full 24-char id via --json (the table only prints
+  // the last 8 chars). Returns null if absent or the call fails.
+  const findProjectId = () => {
+    const { stdout, exitCode } = runCLI('projects list --json', { expectError: true });
+    if (exitCode !== 0) return null;
+    try {
+      const data = JSON.parse(stdout);
+      const arr = Array.isArray(data) ? data : data.projects || [];
+      const found = arr.find((p) => p.name === PROJECT_NAME);
+      return found ? found.id || found._id || null : null;
+    } catch {
+      return null;
+    }
+  };
 
   beforeAll(() => {
-    const { stdout } = runCLI('projects create test-e2e-project --provider aws');
-    const match = stdout.match(/Project ID:\s+([a-f0-9]{24})/i);
-    projectId = match ? match[1] : null;
+    projectId = findProjectId();
+    if (!projectId) {
+      const { stdout } = runCLI(
+        `projects create ${PROJECT_NAME} --provider aws`,
+        { expectError: true },
+      );
+      const match = stdout.match(/Project ID:\s+([a-f0-9]{24})/i);
+      projectId = match ? match[1] : findProjectId();
+      createdThisRun = !!projectId;
+    }
   });
 
   afterAll(() => {
-    if (projectId) runCLI(`projects delete ${projectId} --force`, { expectError: true });
+    // Only tear down a project we created this run; a reused fixture is
+    // left in place on purpose (the only-project guard would block it
+    // anyway). Best-effort — never fail the suite on cleanup.
+    if (createdThisRun && projectId) {
+      runCLI(`projects delete ${projectId} --force`, { expectError: true });
+    }
   });
 
-  itAuthenticated('create returns a 24-char ObjectId in the success message', () => {
+  itAuthenticated('fixture project resolves to a 24-char ObjectId (created or reused)', () => {
     expect(projectId).toMatch(/^[a-f0-9]{24}$/);
   });
 
-  itAuthenticated('list shows the created project by name', () => {
+  itAuthenticated('list shows the project by name', () => {
     const { stdout, exitCode } = runCLI('projects list');
     expect(exitCode).toBe(0);
-    expect(stdout).toContain('test-e2e-project');
+    expect(stdout).toContain(PROJECT_NAME);
   });
 
   itAuthenticated('info renders the detail box with Name field populated', () => {
     const result = runCLI(`projects info ${projectId}`);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('Project Details');
-    expect(result.stdout).toContain('test-e2e-project');
+    expect(result.stdout).toContain(PROJECT_NAME);
     expectNoBugMarkers(result);
   });
 
-  itAuthenticated('update renames the project (exit 0)', () => {
-    const newName = `test-e2e-renamed-${Date.now()}`;
-    const { stdout, stderr, exitCode } = runCLI(
-      `projects update ${projectId} --name ${newName}`,
-    );
-    expect(exitCode).toBe(0);
+  itAuthenticated('update renames the project then restores the fixture name (exit 0)', () => {
+    const tempName = `test-e2e-renamed-${Date.now()}`;
+    const renamed = runCLI(`projects update ${projectId} --name ${tempName}`);
+    expect(renamed.exitCode).toBe(0);
     // spinner.succeed() writes to stderr (ora default); check combined.
-    expect(stdout + stderr).toMatch(/Project updated|updated successfully/);
+    expect(renamed.stdout + renamed.stderr).toMatch(/Project updated|updated successfully/);
+
+    // Restore the canonical name so the fixture stays reusable next run —
+    // without this the project leaks under a unique name every run and the
+    // org eventually trips the plan's project limit.
+    const restored = runCLI(`projects update ${projectId} --name ${PROJECT_NAME}`, { expectError: true });
+    expect(restored.exitCode).toBe(0);
   });
 
   itAuthenticated('default flag succeeds (exit 0)', () => {
@@ -69,10 +110,12 @@ describe('Projects CRUD lifecycle', () => {
 
   itAuthenticated('delete fails with "only project" guard when alone', () => {
     // The server prevents deletion of the only project — assert the
-    // exact guard error, not just "exit code 1".
+    // exact guard error, not just "exit code 1". If the org happens to
+    // have other projects, delete succeeds; account for both.
     const result = runCLI(`projects delete ${projectId} --force`, { expectError: true });
     if (result.exitCode === 0) {
       projectId = null;
+      createdThisRun = false;
       return;
     }
     expect(result.stdout + result.stderr).toMatch(/Cannot delete your only project|at least one project must remain/i);
