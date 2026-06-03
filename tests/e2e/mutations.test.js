@@ -21,15 +21,52 @@ const FAKE_ID = '000000000000000000000000';
 /*  Projects lifecycle                                                 */
 /* ------------------------------------------------------------------ */
 describe('Projects CRUD lifecycle', () => {
+  // Unique fixture name per run. The server forbids deleting an org's only
+  // project (asserted below), so a run can leave a project behind — a FIXED
+  // name would then collide on the next run with 400 "already exists", which
+  // is exactly what wedged the scheduled job. A timestamped name makes create
+  // collision-proof; we also best-effort sweep visible test-e2e-project*
+  // leftovers up front so the org stays under the plan's project limit.
+  const NAME_PREFIX = 'test-e2e-project';
+  const PROJECT_NAME = `${NAME_PREFIX}-${Date.now()}`;
   let projectId;
 
+  const listProjects = () => {
+    const { stdout, exitCode } = runCLI('projects list --json', { expectError: true });
+    if (exitCode !== 0) return [];
+    try {
+      const data = JSON.parse(stdout);
+      return Array.isArray(data) ? data : data.projects || [];
+    } catch {
+      return [];
+    }
+  };
+
   beforeAll(() => {
-    const { stdout } = runCLI('projects create test-e2e-project --provider aws');
-    const match = stdout.match(/Project ID:\s+([a-f0-9]{24})/i);
+    // Sweep leftovers from earlier runs. The only-project guard may keep the
+    // last one — fine, create uses a fresh name so it won't collide.
+    for (const p of listProjects()) {
+      if (typeof p.name === 'string' && p.name.startsWith(NAME_PREFIX)) {
+        runCLI(`projects delete ${p.id || p._id} --force`, { expectError: true });
+      }
+    }
+    const res = runCLI(`projects create ${PROJECT_NAME} --provider aws`, { expectError: true });
+    const match = res.stdout.match(/Project ID:\s+([a-f0-9]{24})/i);
     projectId = match ? match[1] : null;
+    if (!projectId) {
+      // Surface the real API error — the CLI's stdout/stderr are captured by
+      // spawnSync, so without this CI shows opaque ✕ with no cause.
+      // eslint-disable-next-line no-console
+      console.error(
+        `[projects beforeAll] create yielded no id (exit ${res.exitCode})\n` +
+        `  stdout: ${res.stdout}\n  stderr: ${res.stderr}`,
+      );
+    }
   });
 
   afterAll(() => {
+    // Best-effort teardown; the only-project guard may block it when this is
+    // the org's sole project — acceptable, the next run sweeps it.
     if (projectId) runCLI(`projects delete ${projectId} --force`, { expectError: true });
   });
 
@@ -40,19 +77,21 @@ describe('Projects CRUD lifecycle', () => {
   itAuthenticated('list shows the created project by name', () => {
     const { stdout, exitCode } = runCLI('projects list');
     expect(exitCode).toBe(0);
-    expect(stdout).toContain('test-e2e-project');
+    // Assert the full unique name — the table auto-sizes columns (no wrap),
+    // so this is safe and won't pass on an unrelated leftover.
+    expect(stdout).toContain(PROJECT_NAME);
   });
 
   itAuthenticated('info renders the detail box with Name field populated', () => {
     const result = runCLI(`projects info ${projectId}`);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('Project Details');
-    expect(result.stdout).toContain('test-e2e-project');
+    expect(result.stdout).toContain(PROJECT_NAME);
     expectNoBugMarkers(result);
   });
 
   itAuthenticated('update renames the project (exit 0)', () => {
-    const newName = `test-e2e-renamed-${Date.now()}`;
+    const newName = `${PROJECT_NAME}-renamed`;
     const { stdout, stderr, exitCode } = runCLI(
       `projects update ${projectId} --name ${newName}`,
     );
@@ -67,11 +106,13 @@ describe('Projects CRUD lifecycle', () => {
     expect(stdout + stderr).toMatch(/Default project updated|set as default/);
   });
 
-  itAuthenticated('delete fails with "only project" guard when alone', () => {
-    // The server prevents deletion of the only project — assert the
-    // exact guard error, not just "exit code 1".
+  itAuthenticated('delete removes the project, or hits the only-project guard', () => {
+    // Deletes cleanly when other projects exist; when this is the org's only
+    // project the server guard fires. Accept both, assert the guard message.
     const result = runCLI(`projects delete ${projectId} --force`, { expectError: true });
     if (result.exitCode === 0) {
+      // Clean delete (org had other projects) — still assert the success marker.
+      expect(result.stdout + result.stderr).toMatch(/Project deleted|deleted successfully/i);
       projectId = null;
       return;
     }
