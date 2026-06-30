@@ -30,7 +30,7 @@ function parseServiceAccountJson(filePath) {
     if (!json.private_key) throw new Error('Missing private_key in JSON file');
     return { projectId: json.project_id, clientEmail: json.client_email, privateKey: json.private_key };
   } catch (error) {
-    if (error instanceof SyntaxError) throw new Error('Invalid JSON format in file');
+    if (error instanceof SyntaxError) throw new Error('Invalid JSON format in file', { cause: error });
     throw error;
   }
 }
