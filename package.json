@@ -52,7 +52,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@yao-pkg/pkg": "^6.21.0",
+    "@yao-pkg/pkg": "6.19.0",
     "eslint": "^10.6.0",
     "globals": "^17.7.0",
     "jest": "^30.4.2"
