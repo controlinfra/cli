@@ -2,6 +2,25 @@ const axios = require('axios');
 const chalk = require('chalk');
 const { getApiUrl, getToken, clearAuth } = require('../config');
 
+// Network/codes that signal a transient failure where the request likely
+// never produced a server-side effect (connection reset, timeout, DNS blip).
+const TRANSIENT_CODES = ['ECONNRESET', 'ETIMEDOUT', 'ECONNABORTED', 'EAI_AGAIN', 'EPIPE'];
+// Idempotent methods are safe to replay; we deliberately do NOT retry POST so a
+// dropped connection can't silently double-create (e.g. two CLI tokens).
+const IDEMPOTENT_METHODS = ['get', 'head', 'options', 'delete'];
+const MAX_RETRIES = 2;
+
+// Pure predicate (unit-tested): should this failed request be retried?
+function isRetryable(error) {
+  const method = (error?.config?.method || 'get').toLowerCase();
+  if (!IDEMPOTENT_METHODS.includes(method)) return false;
+  if (error?.response) return [502, 503, 504].includes(error.response.status);
+  // No response → network-level failure; retry only the known-transient ones.
+  return TRANSIENT_CODES.includes(error?.code);
+}
+
+const retryDelayMs = (attempt) => 300 * attempt;
+
 /**
  * Create a configured axios instance with auth interceptors
  */
@@ -34,6 +53,18 @@ const createClient = () => {
   client.interceptors.response.use(
     (response) => response,
     async (error) => {
+      // Transient-failure retry (idempotent requests only) with linear
+      // backoff. Covers a momentarily busy/redeploying API dropping the
+      // connection — without this a single reset fails the whole command.
+      if (isRetryable(error)) {
+        const cfg = error.config;
+        cfg._retryCount = (cfg._retryCount || 0) + 1;
+        if (cfg._retryCount <= MAX_RETRIES) {
+          await new Promise((resolve) => setTimeout(resolve, retryDelayMs(cfg._retryCount)));
+          return client.request(cfg);
+        }
+      }
+
       if (error.response) {
         const { status, data } = error.response;
 
@@ -116,4 +147,6 @@ const getClient = () => {
   return client;
 };
 
-module.exports = { createClient, getClient };
+module.exports = {
+  createClient, getClient, isRetryable, retryDelayMs,
+};

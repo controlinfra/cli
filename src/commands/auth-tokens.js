@@ -72,7 +72,13 @@ async function create(name, options, command) {
     }
 
     const data = await cliTokens.create(name, tokenOptions);
-    const token = data.token || data;
+    // The API returns the plaintext token as `data.token` (a string), with
+    // metadata under `data.tokenInfo`. Tolerate older/object shapes
+    // ({ token: { value | token } }) too so a successful create never
+    // misreports the secret as "[hidden]".
+    const plaintext = typeof data.token === 'string'
+      ? data.token
+      : (data.token?.value || data.token?.token);
     spinner.succeed(`Token "${brand.cyan(name)}" created`);
 
     if (command?.parent?.parent?.opts()?.json) {
@@ -81,7 +87,7 @@ async function create(name, options, command) {
     }
 
     console.log();
-    console.log(brand.purpleBold('Token:'), chalk.yellow(token.value || token.token || '[hidden]'));
+    console.log(brand.purpleBold('Token:'), chalk.yellow(plaintext || '[hidden]'));
     console.log();
     console.log(chalk.yellow('  Copy this token now. It will not be shown again.'));
     console.log(chalk.dim('  Use with: controlinfra login --token <token>\n'));

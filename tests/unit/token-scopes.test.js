@@ -152,6 +152,30 @@ describe('Token Create Command', () => {
     expect(mockSpinner.succeed).toHaveBeenCalled();
   });
 
+  it('prints the plaintext token when the API returns it as a string (not "[hidden]")', async () => {
+    // Regression: the API returns { token: 'ci_...' } (string) + tokenInfo
+    // metadata. The command used to read token.value/token.token and fall back
+    // to "[hidden]" on every successful create, hiding the secret from the user.
+    api.cliTokens.create.mockResolvedValue({
+      token: 'ci_realsecret0123456789abcdef',
+      tokenInfo: { name: 'my-token', scopes: DEFAULT_CI_SCOPES },
+    });
+
+    await create('my-token', {}, {});
+
+    const printed = console.log.mock.calls.flat().join(' ');
+    expect(printed).toContain('ci_realsecret0123456789abcdef');
+    expect(printed).not.toContain('[hidden]');
+  });
+
+  it('still handles a legacy nested { token: { value } } shape', async () => {
+    api.cliTokens.create.mockResolvedValue({ token: { value: 'ci_legacynested999' } });
+
+    await create('legacy', {}, {});
+
+    expect(console.log.mock.calls.flat().join(' ')).toContain('ci_legacynested999');
+  });
+
   it('should pass comma-separated scopes to API', async () => {
     api.cliTokens.create.mockResolvedValue({
       token: 'ci_abc123',
