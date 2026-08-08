@@ -1,70 +1,76 @@
 'use strict';
 
-jest.mock('../../src/api', () => ({
+vi.mock('../../src/api', async (importOriginal) => ({
+  ...(await importOriginal()),
   repos: {
-    list: jest.fn(),
-    get: jest.fn(),
-    getStats: jest.fn(),
-    delete: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    listAvailable: jest.fn(),
+    list: vi.fn(),
+    get: vi.fn(),
+    getStats: vi.fn(),
+    delete: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    listAvailable: vi.fn(),
   },
 }));
 
-jest.mock('../../src/config', () => ({
-  requireAuth: jest.fn(),
-  saveAuth: jest.fn(),
-  getUser: jest.fn(),
-  isAuthenticated: jest.fn(),
+vi.mock('../../src/config', async (importOriginal) => ({
+  ...(await importOriginal()),
+  requireAuth: vi.fn(),
+  saveAuth: vi.fn(),
+  getUser: vi.fn(),
+  isAuthenticated: vi.fn(),
 }));
 
-const mockSpinner = {
-  start: jest.fn().mockReturnThis(),
-  stop: jest.fn(),
-  succeed: jest.fn(),
-  fail: jest.fn(),
-  warn: jest.fn(),
+// vi.mock is hoisted above the file body, so anything its factory
+// references has to be hoisted too — hence vi.hoisted().
+const { mockSpinner } = vi.hoisted(() => ({ mockSpinner: {
+  start: vi.fn().mockReturnThis(),
+  stop: vi.fn(),
+  succeed: vi.fn(),
+  fail: vi.fn(),
+  warn: vi.fn(),
   set text(v) { this._text = v; },
   get text() { return this._text; },
-};
-jest.mock('../../src/output', () => ({
+} }));
+vi.mock('../../src/output', async (importOriginal) => ({
+  ...(await importOriginal()),
   brand: {
-    purple: jest.fn((s) => s),
-    purpleBold: jest.fn((s) => s),
-    mid: jest.fn((s) => s),
-    light: jest.fn((s) => s),
-    cyan: jest.fn((s) => s),
-    cyanBold: jest.fn((s) => s),
-    gradient: Array(6).fill(jest.fn((s) => s)),
+    hex: { purple: '#ac9fe0', cyan: '#bdedfa', shadow: '#3d3466' },
+    purple: vi.fn((s) => s),
+    purpleBold: vi.fn((s) => s),
+    mid: vi.fn((s) => s),
+    light: vi.fn((s) => s),
+    cyan: vi.fn((s) => s),
+    cyanBold: vi.fn((s) => s),
+    gradient: Array(6).fill(vi.fn((s) => s)),
   },
-  createSpinner: jest.fn(() => mockSpinner),
-  outputError: jest.fn(),
-  outputTable: jest.fn(),
-  outputInfo: jest.fn(),
-  outputBox: jest.fn(),
-  formatRelativeTime: jest.fn(() => 'just now'),
-  colorStatus: jest.fn((s) => s),
+  createSpinner: vi.fn(() => mockSpinner),
+  outputError: vi.fn(),
+  outputTable: vi.fn(),
+  outputInfo: vi.fn(),
+  outputBox: vi.fn(),
+  formatRelativeTime: vi.fn(() => 'just now'),
+  colorStatus: vi.fn((s) => s),
 }));
 
-jest.mock('inquirer', () => ({ prompt: jest.fn() }));
+vi.mock('inquirer', () => ({ default: { prompt: vi.fn() }, prompt: vi.fn() }));
 
-const api = require('../../src/api');
-const output = require('../../src/output');
-const inquirer = require('inquirer');
-const { remove, info, stats, resolveRepoId } = require('../../src/commands/repos');
-const { add } = require('../../src/commands/repos-add');
-const { update } = require('../../src/commands/repos-update');
+import * as api from '../../src/api.js';
+import * as output from '../../src/output.js';
+import inquirer from 'inquirer';
+import { remove, info, stats, resolveRepoId } from '../../src/commands/repos.js';
+import { add } from '../../src/commands/repos-add.js';
+import { update } from '../../src/commands/repos-update.js';
 
-beforeAll(() => { jest.spyOn(console, 'log').mockImplementation(() => {}); });
+beforeAll(() => { vi.spyOn(console, 'log').mockImplementation(() => {}); });
 afterAll(() => { console.log.mockRestore(); mockExit.mockRestore(); });
-const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit called'); });
+const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit called'); });
 
 const jsonCommand = { parent: { parent: { opts: () => ({ json: true }) } } };
 const noJsonCommand = { parent: { parent: { opts: () => ({ json: false }) } } };
 
 describe('resolveRepoId', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('resolves exact match', async () => {
     api.repos.list.mockResolvedValue({ configs: [{ _id: 'abc123' }] });
@@ -88,7 +94,7 @@ describe('resolveRepoId', () => {
 });
 
 describe('remove', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('removes repo with --force', async () => {
     api.repos.list.mockResolvedValue({ configs: [{ _id: 'repo1' }] });
@@ -119,7 +125,7 @@ describe('remove', () => {
 });
 
 describe('info', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('displays repo info', async () => {
     api.repos.list.mockResolvedValue({ configs: [{ _id: 'repo1' }] });
@@ -150,7 +156,7 @@ describe('info', () => {
 });
 
 describe('stats', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('displays stats', async () => {
     api.repos.list.mockResolvedValue({ configs: [{ _id: 'repo1' }] });
@@ -181,7 +187,7 @@ describe('stats', () => {
 });
 
 describe('add', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('adds a repo with valid format', async () => {
     api.repos.listAvailable.mockResolvedValue({ repositories: [{ fullName: 'owner/repo', id: 1, name: 'repo', owner: { login: 'owner' } }] });
@@ -211,7 +217,7 @@ describe('add', () => {
 });
 
 describe('update', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('updates repo with branch option', async () => {
     api.repos.list.mockResolvedValue({ configs: [{ _id: 'repo1' }] });

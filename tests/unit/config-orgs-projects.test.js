@@ -1,54 +1,62 @@
 'use strict';
 
-jest.mock('../../src/api', () => ({
+vi.mock('../../src/api', async (importOriginal) => ({
+  ...(await importOriginal()),
   orgs: {
-    list: jest.fn(), create: jest.fn(), get: jest.fn(), update: jest.fn(), delete: jest.fn(),
-    getMembers: jest.fn(), invite: jest.fn(), getInviteLink: jest.fn(), getInvitations: jest.fn(),
-    revokeInvitation: jest.fn(), removeMember: jest.fn(), updateRole: jest.fn(),
-    leave: jest.fn(), transfer: jest.fn(), acceptInvite: jest.fn(),
+    list: vi.fn(), create: vi.fn(), get: vi.fn(), update: vi.fn(), delete: vi.fn(),
+    getMembers: vi.fn(), invite: vi.fn(), getInviteLink: vi.fn(), getInvitations: vi.fn(),
+    revokeInvitation: vi.fn(), removeMember: vi.fn(), updateRole: vi.fn(),
+    leave: vi.fn(), transfer: vi.fn(), acceptInvite: vi.fn(),
   },
   projects: {
-    list: jest.fn(), create: jest.fn(), get: jest.fn(), update: jest.fn(),
-    delete: jest.fn(), setDefault: jest.fn(),
+    list: vi.fn(), create: vi.fn(), get: vi.fn(), update: vi.fn(),
+    delete: vi.fn(), setDefault: vi.fn(),
   },
 }));
 
-const mockCliConfig = { set: jest.fn(), get: jest.fn() };
-jest.mock('../../src/config', () => ({
-  requireAuth: jest.fn(), saveAuth: jest.fn(), getUser: jest.fn(), isAuthenticated: jest.fn(),
-  getApiUrl: jest.fn(() => 'https://api.controlinfra.com'),
-  getConfigPath: jest.fn(() => '/mock/config/path'),
-  setConfig: jest.fn(), getConfig: jest.fn(), clearConfig: jest.fn(),
+// vi.mock is hoisted above the file body, so anything its factory
+// references has to be hoisted too — hence vi.hoisted().
+const { mockCliConfig } = vi.hoisted(() => ({ mockCliConfig: { set: vi.fn(), get: vi.fn() } }));
+vi.mock('../../src/config', async (importOriginal) => ({
+  ...(await importOriginal()),
+  requireAuth: vi.fn(), saveAuth: vi.fn(), getUser: vi.fn(), isAuthenticated: vi.fn(),
+  getApiUrl: vi.fn(() => 'https://api.controlinfra.com'),
+  getConfigPath: vi.fn(() => '/mock/config/path'),
+  setConfig: vi.fn(), getConfig: vi.fn(), clearConfig: vi.fn(),
   config: mockCliConfig,
 }));
 
-const mockSpinner = { start: jest.fn().mockReturnThis(), stop: jest.fn(), succeed: jest.fn(), fail: jest.fn(), warn: jest.fn() };
-jest.mock('../../src/output', () => ({
+// vi.mock is hoisted above the file body, so anything its factory
+// references has to be hoisted too — hence vi.hoisted().
+const { mockSpinner } = vi.hoisted(() => ({ mockSpinner: { start: vi.fn().mockReturnThis(), stop: vi.fn(), succeed: vi.fn(), fail: vi.fn(), warn: vi.fn() } }));
+vi.mock('../../src/output', async (importOriginal) => ({
+  ...(await importOriginal()),
   brand: {
-    purple: jest.fn((s) => s), purpleBold: jest.fn((s) => s), mid: jest.fn((s) => s),
-    light: jest.fn((s) => s), cyan: jest.fn((s) => s), cyanBold: jest.fn((s) => s),
-    gradient: Array(6).fill(jest.fn((s) => s)),
+    hex: { purple: '#ac9fe0', cyan: '#bdedfa', shadow: '#3d3466' },
+    purple: vi.fn((s) => s), purpleBold: vi.fn((s) => s), mid: vi.fn((s) => s),
+    light: vi.fn((s) => s), cyan: vi.fn((s) => s), cyanBold: vi.fn((s) => s),
+    gradient: Array(6).fill(vi.fn((s) => s)),
   },
-  createSpinner: jest.fn(() => mockSpinner),
-  outputError: jest.fn(), outputTable: jest.fn(), outputInfo: jest.fn(),
-  outputBox: jest.fn(), formatRelativeTime: jest.fn(() => '2d ago'),
+  createSpinner: vi.fn(() => mockSpinner),
+  outputError: vi.fn(), outputTable: vi.fn(), outputInfo: vi.fn(),
+  outputBox: vi.fn(), formatRelativeTime: vi.fn(() => '2d ago'),
 }));
 
-jest.mock('inquirer', () => ({ prompt: jest.fn() }));
+vi.mock('inquirer', () => ({ default: { prompt: vi.fn() }, prompt: vi.fn() }));
 
-const api = require('../../src/api');
-const output = require('../../src/output');
-const inquirer = require('inquirer');
-const { create: createOrg, update: updateOrg, deleteOrg, resolveOrgId, switchOrg } = require('../../src/commands/orgs');
-const { invite, inviteLink, revoke, removeMember, updateRole, leave, transfer, accept } = require('../../src/commands/orgs-members');
-const { create: createProject, update: updateProject, deleteProject, setDefault } = require('../../src/commands/projects');
+import * as api from '../../src/api.js';
+import * as output from '../../src/output.js';
+import inquirer from 'inquirer';
+import { create as createOrg, update as updateOrg, deleteOrg, resolveOrgId, switchOrg } from '../../src/commands/orgs.js';
+import { invite, inviteLink, revoke, removeMember, updateRole, leave, transfer, accept } from '../../src/commands/orgs-members.js';
+import { create as createProject, update as updateProject, deleteProject, setDefault } from '../../src/commands/projects.js';
 
-beforeAll(() => { jest.spyOn(console, 'log').mockImplementation(() => {}); });
+beforeAll(() => { vi.spyOn(console, 'log').mockImplementation(() => {}); });
 afterAll(() => { console.log.mockRestore(); mockExit.mockRestore(); });
-const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit called'); });
+const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit called'); });
 const ORG_LIST = [{ id: 'org-abc-123', name: 'My Org', role: 'owner', memberCount: 3 }];
 const mockOrgList = () => api.orgs.list.mockResolvedValue({ organizations: ORG_LIST });
-beforeEach(() => { jest.clearAllMocks(); });
+beforeEach(() => { vi.clearAllMocks(); });
 
 // ── Orgs CRUD ──
 
@@ -126,7 +134,7 @@ describe('resolveOrgId', () => {
 // ── Orgs Switch ──
 
 describe('orgs switchOrg', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('should switch by name', async () => {
     api.orgs.list.mockResolvedValue({ organizations: [
       { _id: 'org-1', name: 'My Org' },

@@ -1,13 +1,13 @@
-const chalk = require('chalk');
-const { cliTokens } = require('../api');
-const { requireAuth } = require('../config');
-const {
+import chalk from 'chalk';
+import { cliTokens } from '../api.js';
+import { requireAuth } from '../config.js';
+import {
   createSpinner,
   outputTable,
   outputError,
   brand,
   formatRelativeTime,
-} = require('../output');
+} from '../output.js';
 
 /**
  * List CLI tokens
@@ -116,4 +116,4 @@ async function revoke(id, _options) {
   }
 }
 
-module.exports = { list, create, revoke };
+export { list, create, revoke };

@@ -1,10 +1,10 @@
-const fs = require('fs');
-const path = require('path');
-const chalk = require('chalk');
-const inquirer = require('inquirer');
-const { integrations } = require('../api');
-const { requireAuth } = require('../config');
-const { createSpinner, outputError, brand } = require('../output');
+import fs from 'fs';
+import path from 'path';
+import chalk from 'chalk';
+import inquirer from 'inquirer';
+import { integrations } from '../api.js';
+import { requireAuth } from '../config.js';
+import { createSpinner, outputError, brand } from '../output.js';
 
 function isValidProjectId(value) {
   return /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(value);
@@ -187,4 +187,4 @@ async function setup(options) {
   }
 }
 
-module.exports = { setup };
+export { setup };

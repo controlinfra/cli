@@ -1,58 +1,69 @@
 'use strict';
 
-jest.mock('../../src/api', () => ({
-  scans: { retry: jest.fn(), delete: jest.fn(), list: jest.fn(), getByRepository: jest.fn(),
-    trigger: jest.fn(), cancel: jest.fn(), getDetails: jest.fn() },
-  repos: { list: jest.fn() },
-  drifts: { list: jest.fn(), get: jest.fn(), getByScan: jest.fn(), getByRepository: jest.fn(),
-    generateFix: jest.fn(), createPR: jest.fn(), updateStatus: jest.fn(),
-    getStatistics: jest.fn(), reanalyze: jest.fn() },
+vi.mock('../../src/api', async (importOriginal) => ({
+  ...(await importOriginal()),
+  scans: { retry: vi.fn(), delete: vi.fn(), list: vi.fn(), getByRepository: vi.fn(),
+    trigger: vi.fn(), cancel: vi.fn(), getDetails: vi.fn() },
+  repos: { list: vi.fn() },
+  drifts: { list: vi.fn(), get: vi.fn(), getByScan: vi.fn(), getByRepository: vi.fn(),
+    generateFix: vi.fn(), createPR: vi.fn(), updateStatus: vi.fn(),
+    getStatistics: vi.fn(), reanalyze: vi.fn() },
 }));
 
-jest.mock('../../src/config', () => ({
-  requireAuth: jest.fn(),
-  getDriftGateDefaults: jest.fn(() => ({})),
+vi.mock('../../src/config', async (importOriginal) => ({
+  ...(await importOriginal()),
+  requireAuth: vi.fn(),
+  getDriftGateDefaults: vi.fn(() => ({})),
 }));
 
-const mockSpinner = {
-  start: jest.fn().mockReturnThis(), stop: jest.fn(), succeed: jest.fn(),
-  fail: jest.fn(), warn: jest.fn(),
-};
-jest.mock('../../src/output', () => ({
-  brand: { purple: jest.fn((s) => s), purpleBold: jest.fn((s) => s), mid: jest.fn((s) => s),
-    light: jest.fn((s) => s), cyan: jest.fn((s) => s), cyanBold: jest.fn((s) => s),
-    gradient: Array(6).fill(jest.fn((s) => s)) },
-  createSpinner: jest.fn(() => mockSpinner),
-  outputError: jest.fn(), outputTable: jest.fn(), outputInfo: jest.fn(),
-  outputBox: jest.fn(), colorStatus: jest.fn((s) => s),
-  formatRelativeTime: jest.fn(() => '1m ago'), formatDuration: jest.fn(() => '5s'),
-  truncate: jest.fn((s) => s),
+// vi.mock is hoisted above the file body, so anything its factory
+// references has to be hoisted too — hence vi.hoisted().
+const { mockSpinner } = vi.hoisted(() => ({ mockSpinner: {
+  start: vi.fn().mockReturnThis(), stop: vi.fn(), succeed: vi.fn(),
+  fail: vi.fn(), warn: vi.fn(),
+} }));
+vi.mock('../../src/output', async (importOriginal) => ({
+  ...(await importOriginal()),
+  brand: { purple: vi.fn((s) => s), purpleBold: vi.fn((s) => s), mid: vi.fn((s) => s),
+    light: vi.fn((s) => s), cyan: vi.fn((s) => s), cyanBold: vi.fn((s) => s),
+    gradient: Array(6).fill(vi.fn((s) => s)) },
+  createSpinner: vi.fn(() => mockSpinner),
+  outputError: vi.fn(), outputTable: vi.fn(), outputInfo: vi.fn(),
+  outputBox: vi.fn(), colorStatus: vi.fn((s) => s),
+  formatRelativeTime: vi.fn(() => '1m ago'), formatDuration: vi.fn(() => '5s'),
+  truncate: vi.fn((s) => s),
 }));
 
-jest.mock('../../src/commands/scan-wait', () => ({
-  resolveScanId: jest.fn((id) => Promise.resolve(id)),
-  getGlobalJsonFlag: jest.fn(() => false),
-  waitForScan: jest.fn(),
+vi.mock('../../src/commands/scan-wait', async (importOriginal) => ({
+  ...(await importOriginal()),
+  resolveScanId: vi.fn((id) => Promise.resolve(id)),
+  getGlobalJsonFlag: vi.fn(() => false),
+  waitForScan: vi.fn(),
 }));
 
-jest.mock('inquirer', () => ({ prompt: jest.fn() }));
-jest.mock('fs', () => ({ ...jest.requireActual('fs'), writeFileSync: jest.fn() }));
+vi.mock('inquirer', () => ({ default: { prompt: vi.fn() }, prompt: vi.fn() }));
+vi.mock('fs', async () => {
+  const actual = await vi.importActual('fs');
+  const mocked = { ...actual, writeFileSync: vi.fn() };
+  // source files do `import fs from 'fs'`, so the default matters
+  return { ...mocked, default: mocked };
+});
 
-const api = require('../../src/api');
-const output = require('../../src/output');
-const inquirer = require('inquirer');
-const fs = require('fs');
-const { resolveScanId } = require('../../src/commands/scan-wait');
-const { retry, deleteScan } = require('../../src/commands/scan-actions');
-const { run, list: scanList, cancel, logs } = require('../../src/commands/scan');
-const { list: driftList, show, fix, createPR, ignore, resolve } = require('../../src/commands/drifts');
-const { stats, reanalyze, exportDrifts } = require('../../src/commands/drifts-actions');
+import * as api from '../../src/api.js';
+import * as output from '../../src/output.js';
+import inquirer from 'inquirer';
+import fs from 'fs';
+import { resolveScanId } from '../../src/commands/scan-wait.js';
+import { retry, deleteScan } from '../../src/commands/scan-actions.js';
+import { run, list as scanList, cancel, logs } from '../../src/commands/scan.js';
+import { list as driftList, show, fix, createPR, ignore, resolve } from '../../src/commands/drifts.js';
+import { stats, reanalyze, exportDrifts } from '../../src/commands/drifts-actions.js';
 
-beforeAll(() => { jest.spyOn(console, 'log').mockImplementation(() => {}); });
+beforeAll(() => { vi.spyOn(console, 'log').mockImplementation(() => {}); });
 afterAll(() => { console.log.mockRestore(); mockExit.mockRestore(); });
-const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit'); });
+const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit'); });
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => vi.clearAllMocks());
 
 // --- scan-actions.js ---
 

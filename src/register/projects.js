@@ -1,4 +1,4 @@
-const projectCommands = require('../commands/projects');
+import * as projectCommands from '../commands/projects.js';
 
 function registerProjects(program) {
   const projects = program.command('projects').description('Manage projects');
@@ -40,4 +40,4 @@ function registerProjects(program) {
     .action(projectCommands.setDefault);
 }
 
-module.exports = registerProjects;
+export default registerProjects;

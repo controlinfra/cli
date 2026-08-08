@@ -1,8 +1,9 @@
-const chalk = require('chalk');
-const { repos } = require('../api');
-const { requireAuth } = require('../config');
-const { createSpinner, outputError, outputBox, brand } = require('../output');
-const { resolveRepoId } = require('./repos');
+import chalk from 'chalk';
+import { repos } from '../api.js';
+import { requireAuth } from '../config.js';
+import { createSpinner, outputError, outputBox, brand } from '../output.js';
+import { resolveRepoId } from './repos.js';
+import fs from 'fs';
 
 /**
  * Update a repository configuration
@@ -114,7 +115,6 @@ async function update(id, options, command) {
 
       if (options.gcpJsonFile) {
         try {
-          const fs = require('fs');
           const jsonContent = fs.readFileSync(options.gcpJsonFile, 'utf8');
           const sa = JSON.parse(jsonContent);
           updates.gcpConfig.projectId = sa.project_id || updates.gcpConfig.projectId;
@@ -159,4 +159,4 @@ async function update(id, options, command) {
   }
 }
 
-module.exports = { update };
+export { update };

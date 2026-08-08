@@ -5,56 +5,62 @@
  * Tests: scope validation, token creation, token lifecycle, CLI command behavior
  */
 
-jest.mock('../../src/api', () => ({
+vi.mock('../../src/api', async (importOriginal) => ({
+  ...(await importOriginal()),
   cliTokens: {
-    list: jest.fn(),
-    create: jest.fn(),
-    revoke: jest.fn(),
+    list: vi.fn(),
+    create: vi.fn(),
+    revoke: vi.fn(),
   },
 }));
 
-jest.mock('../../src/config', () => ({
-  requireAuth: jest.fn(),
-  saveAuth: jest.fn(),
-  getUser: jest.fn(),
-  isAuthenticated: jest.fn(() => true),
+vi.mock('../../src/config', async (importOriginal) => ({
+  ...(await importOriginal()),
+  requireAuth: vi.fn(),
+  saveAuth: vi.fn(),
+  getUser: vi.fn(),
+  isAuthenticated: vi.fn(() => true),
 }));
 
-const mockSpinner = {
-  start: jest.fn().mockReturnThis(),
-  stop: jest.fn(),
-  succeed: jest.fn(),
-  fail: jest.fn(),
-};
-jest.mock('../../src/output', () => ({
+// vi.mock is hoisted above the file body, so anything its factory
+// references has to be hoisted too — hence vi.hoisted().
+const { mockSpinner } = vi.hoisted(() => ({ mockSpinner: {
+  start: vi.fn().mockReturnThis(),
+  stop: vi.fn(),
+  succeed: vi.fn(),
+  fail: vi.fn(),
+} }));
+vi.mock('../../src/output', async (importOriginal) => ({
+  ...(await importOriginal()),
   brand: {
-    purple: jest.fn((s) => s),
-    purpleBold: jest.fn((s) => s),
-    cyan: jest.fn((s) => s),
-    cyanBold: jest.fn((s) => s),
+    hex: { purple: '#ac9fe0', cyan: '#bdedfa', shadow: '#3d3466' },
+    purple: vi.fn((s) => s),
+    purpleBold: vi.fn((s) => s),
+    cyan: vi.fn((s) => s),
+    cyanBold: vi.fn((s) => s),
   },
-  createSpinner: jest.fn(() => mockSpinner),
-  outputError: jest.fn(),
-  outputTable: jest.fn(),
-  formatRelativeTime: jest.fn((d) => d || '-'),
+  createSpinner: vi.fn(() => mockSpinner),
+  outputError: vi.fn(),
+  outputTable: vi.fn(),
+  formatRelativeTime: vi.fn((d) => d || '-'),
 }));
 
-const api = require('../../src/api');
-const output = require('../../src/output');
-const { list, create, revoke } = require('../../src/commands/auth-tokens');
+import * as api from '../../src/api.js';
+import * as output from '../../src/output.js';
+import { list, create, revoke } from '../../src/commands/auth-tokens.js';
 
 // Silence console.log
-beforeAll(() => { jest.spyOn(console, 'log').mockImplementation(() => {}); });
+beforeAll(() => { vi.spyOn(console, 'log').mockImplementation(() => {}); });
 afterAll(() => { console.log.mockRestore(); mockExit.mockRestore(); });
 
-const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
+const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
   throw new Error('process.exit called');
 });
 
 // ── Import scopes from server source of truth (monorepo) or use known list (standalone) ──
 let VALID_SCOPES;
 try {
-  VALID_SCOPES = require('../../../server/controllers/auth.controller/cli-tokens').VALID_TOKEN_SCOPES;
+  VALID_SCOPES = (await import('../../../server/controllers/auth.controller/cli-tokens.js')).VALID_TOKEN_SCOPES;
 } catch {
   VALID_SCOPES = [
     'repos:read', 'repos:write', 'scans:read', 'scans:trigger',
@@ -68,7 +74,7 @@ try {
 const DEFAULT_CI_SCOPES = ['repos:read', 'scans:read', 'scans:trigger', 'drifts:read'];
 
 describe('Token List Command', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('should display tokens with scopes in table', async () => {
     api.cliTokens.list.mockResolvedValue({
@@ -138,7 +144,7 @@ describe('Token List Command', () => {
 });
 
 describe('Token Create Command', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('should create token with default scopes (no --scopes flag)', async () => {
     api.cliTokens.create.mockResolvedValue({
@@ -239,7 +245,7 @@ describe('Token Create Command', () => {
 });
 
 describe('Token Revoke Command', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('should revoke token by ID', async () => {
     api.cliTokens.revoke.mockResolvedValue({ success: true });

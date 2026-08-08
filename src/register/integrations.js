@@ -1,8 +1,8 @@
-const slackCommands = require('../commands/slack');
-const awsCommands = require('../commands/aws');
-const azureCommands = require('../commands/azure');
-const gcpCommands = require('../commands/gcp');
-const aiCommands = require('../commands/ai');
+import * as slackCommands from '../commands/slack.js';
+import * as awsCommands from '../commands/aws.js';
+import * as azureCommands from '../commands/azure.js';
+import * as gcpCommands from '../commands/gcp.js';
+import * as aiCommands from '../commands/ai.js';
 
 function registerIntegrations(program) {
   // Slack
@@ -147,4 +147,4 @@ function registerIntegrations(program) {
     .action(aiCommands.remove);
 }
 
-module.exports = registerIntegrations;
+export default registerIntegrations;

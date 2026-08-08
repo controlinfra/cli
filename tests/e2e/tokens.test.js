@@ -6,10 +6,10 @@
  * opaque crash.
  */
 
-const { runCLI, itAuthenticated } = require('./helpers');
-const {
+import { runCLI, itAuthenticated } from './helpers.js';
+import {
   expectHelpLists, expectJsonOutput, expectSuccessOrPermissionError, expectNoBugMarkers,
-} = require('./assertions');
+} from './assertions.js';
 
 describe('CLI Token Commands', () => {
   describe('tokens list', () => {

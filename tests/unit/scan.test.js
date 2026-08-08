@@ -1,36 +1,39 @@
 'use strict';
 
 // Mock the dependencies before requiring the module
-jest.mock('../../src/api', () => ({
+vi.mock('../../src/api', async (importOriginal) => ({
+  ...(await importOriginal()),
   scans: {},
   repos: {},
   drifts: {},
 }));
 
-jest.mock('../../src/config', () => ({
-  requireAuth: jest.fn(),
-  getApiUrl: jest.fn(() => 'https://api.controlinfra.com'),
-  getDriftGateDefaults: jest.fn(() => ({
+vi.mock('../../src/config', async (importOriginal) => ({
+  ...(await importOriginal()),
+  requireAuth: vi.fn(),
+  getApiUrl: vi.fn(() => 'https://api.controlinfra.com'),
+  getDriftGateDefaults: vi.fn(() => ({
     failOnDrift: false,
     failOnSeverity: null,
     failOnNewOnly: false,
   })),
 }));
 
-jest.mock('../../src/output', () => ({
-  createSpinner: jest.fn(() => ({
-    start: jest.fn().mockReturnThis(),
-    stop: jest.fn(),
-    succeed: jest.fn(),
-    fail: jest.fn(),
+vi.mock('../../src/output', async (importOriginal) => ({
+  ...(await importOriginal()),
+  createSpinner: vi.fn(() => ({
+    start: vi.fn().mockReturnThis(),
+    stop: vi.fn(),
+    succeed: vi.fn(),
+    fail: vi.fn(),
   })),
-  outputTable: jest.fn(),
-  outputError: jest.fn(),
-  outputBox: jest.fn(),
-  colorStatus: jest.fn((s) => s),
-  formatRelativeTime: jest.fn(),
-  formatDuration: jest.fn(),
-  truncate: jest.fn((s) => s),
+  outputTable: vi.fn(),
+  outputError: vi.fn(),
+  outputBox: vi.fn(),
+  colorStatus: vi.fn((s) => s),
+  formatRelativeTime: vi.fn(),
+  formatDuration: vi.fn(),
+  truncate: vi.fn((s) => s),
 }));
 
 // Extract evaluateDriftGate for testing by reading the source

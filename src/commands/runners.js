@@ -1,8 +1,8 @@
-const chalk = require('chalk');
-const inquirer = require('inquirer');
-const { runners } = require('../api');
-const { requireAuth } = require('../config');
-const {
+import chalk from 'chalk';
+import inquirer from 'inquirer';
+import { runners } from '../api.js';
+import { requireAuth } from '../config.js';
+import {
   createSpinner,
   outputTable,
   outputError,
@@ -10,8 +10,8 @@ const {
   colorStatus,
   brand,
   formatRelativeTime,
-} = require('../output');
-const { resolveRunnerId } = require('./runners-setup');
+} from '../output.js';
+import { resolveRunnerId } from './runners-setup.js';
 
 /**
  * List all runners
@@ -236,10 +236,4 @@ async function regenerateToken(runnerId, options, command) {
   }
 }
 
-module.exports = {
-  list,
-  add,
-  status,
-  remove,
-  regenerateToken,
-};
+export { list, add, status, remove, regenerateToken };

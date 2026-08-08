@@ -1,6 +1,6 @@
-const axios = require('axios');
-const chalk = require('chalk');
-const { getApiUrl, getToken, clearAuth } = require('../config');
+import axios from 'axios';
+import chalk from 'chalk';
+import { getApiUrl, getToken, clearAuth, getUser, config as cliConfig } from '../config.js';
 
 // Network/codes that signal a transient failure where the request likely
 // never produced a server-side effect (connection reset, timeout, DNS blip).
@@ -40,7 +40,6 @@ const createClient = () => {
       config.headers.Authorization = `Bearer ${token}`;
     }
     // Send org context so server scopes resources correctly
-    const { getUser, config: cliConfig } = require('../config');
     const user = getUser();
     const orgId = process.env.CONTROLINFRA_ORG_ID || cliConfig.get('orgId') || user?.defaultOrgId;
     if (orgId) {
@@ -101,7 +100,6 @@ const createClient = () => {
           // the fallback also 404s.
           const isOrgMissing = /organization not found/i.test(message);
           if (isOrgMissing && !error.config?._orgFallbackTried) {
-            const { getUser, config: cliConfig } = require('../config');
             const user = getUser();
             const fallbackOrgId = user?.defaultOrgId;
             const currentOrgId = cliConfig.get('orgId');
@@ -147,6 +145,4 @@ const getClient = () => {
   return client;
 };
 
-module.exports = {
-  createClient, getClient, isRetryable, retryDelayMs,
-};
+export { createClient, getClient, isRetryable, retryDelayMs };

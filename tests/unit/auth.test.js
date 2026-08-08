@@ -1,89 +1,104 @@
 'use strict';
 
-jest.mock('../../src/api', () => ({
+vi.mock('../../src/api', async (importOriginal) => ({
+  ...(await importOriginal()),
   auth: {
-    getMe: jest.fn(),
-    logout: jest.fn(),
-    getQuota: jest.fn(),
+    getMe: vi.fn(),
+    logout: vi.fn(),
+    getQuota: vi.fn(),
   },
-  repos: { list: jest.fn() },
-  scans: { list: jest.fn() },
-  drifts: { list: jest.fn() },
+  repos: { list: vi.fn() },
+  scans: { list: vi.fn() },
+  drifts: { list: vi.fn() },
 }));
 
-jest.mock('../../src/config', () => ({
-  saveAuth: jest.fn(),
-  clearAuth: jest.fn(),
-  getUser: jest.fn(),
-  isAuthenticated: jest.fn(),
-  getApiUrl: jest.fn(() => 'https://api.controlinfra.com'),
-  getConfigPath: jest.fn(() => '/mock/config/path'),
+vi.mock('../../src/config', async (importOriginal) => ({
+  ...(await importOriginal()),
+  saveAuth: vi.fn(),
+  clearAuth: vi.fn(),
+  getUser: vi.fn(),
+  isAuthenticated: vi.fn(),
+  getApiUrl: vi.fn(() => 'https://api.controlinfra.com'),
+  getConfigPath: vi.fn(() => '/mock/config/path'),
 }));
 
-const mockSpinner = {
-  start: jest.fn().mockReturnThis(),
-  stop: jest.fn(),
-  succeed: jest.fn(),
-  fail: jest.fn(),
-};
-jest.mock('../../src/output', () => ({
+// vi.mock is hoisted above the file body, so anything its factory
+// references has to be hoisted too — hence vi.hoisted().
+const { mockSpinner } = vi.hoisted(() => ({ mockSpinner: {
+  start: vi.fn().mockReturnThis(),
+  stop: vi.fn(),
+  succeed: vi.fn(),
+  fail: vi.fn(),
+} }));
+vi.mock('../../src/output', async (importOriginal) => ({
+  ...(await importOriginal()),
   brand: {
-    purple: jest.fn((s) => s),
-    purpleBold: jest.fn((s) => s),
-    mid: jest.fn((s) => s),
-    light: jest.fn((s) => s),
-    cyan: jest.fn((s) => s),
-    cyanBold: jest.fn((s) => s),
-    gradient: Array(6).fill(jest.fn((s) => s)),
+    hex: { purple: '#ac9fe0', cyan: '#bdedfa', shadow: '#3d3466' },
+    purple: vi.fn((s) => s),
+    purpleBold: vi.fn((s) => s),
+    mid: vi.fn((s) => s),
+    light: vi.fn((s) => s),
+    cyan: vi.fn((s) => s),
+    cyanBold: vi.fn((s) => s),
+    gradient: Array(6).fill(vi.fn((s) => s)),
   },
-  createSpinner: jest.fn(() => mockSpinner),
-  outputError: jest.fn(),
-  outputInfo: jest.fn(),
-  outputBox: jest.fn(),
+  createSpinner: vi.fn(() => mockSpinner),
+  outputError: vi.fn(),
+  outputInfo: vi.fn(),
+  outputBox: vi.fn(),
 }));
 
-jest.mock('../../src/banner', () => ({
-  gradientBanner: jest.fn(),
+vi.mock('../../src/banner', () => ({
+  gradientBanner: vi.fn(),
 }));
 
-jest.mock('../../src/utils/browser-detect', () => ({
-  canOpenBrowser: jest.fn(),
+vi.mock('../../src/utils/browser-detect', async (importOriginal) => ({
+  ...(await importOriginal()),
+  canOpenBrowser: vi.fn(),
 }));
 
-jest.mock('../../src/commands/auth-html', () => ({
-  getSuccessHtml: jest.fn(() => '<html>success</html>'),
-  getErrorHtml: jest.fn(() => '<html>error</html>'),
+vi.mock('../../src/commands/auth-html', async (importOriginal) => ({
+  ...(await importOriginal()),
+  getSuccessHtml: vi.fn(() => '<html>success</html>'),
+  getErrorHtml: vi.fn(() => '<html>error</html>'),
 }));
 
-jest.mock('child_process', () => ({
-  execFile: jest.fn(),
-}));
+vi.mock('child_process', () => {
+  const mocked = {
+  execFile: vi.fn(),
+};
+  // source imports this as a default (`import cp from 'child_process'`)
+  return { ...mocked, default: mocked };
+});
 
-jest.mock('inquirer', () => ({
-  prompt: jest.fn(),
-}));
+vi.mock('inquirer', () => {
+  const prompt = vi.fn();
+  // src does `import inquirer from 'inquirer'`, so the mock must expose
+  // a default; the named export is kept for tests that reach for it.
+  return { default: { prompt }, prompt };
+});
 
-const api = require('../../src/api');
-const config = require('../../src/config');
-const output = require('../../src/output');
-const inquirer = require('inquirer');
-const childProcess = require('child_process');
-const http = require('http');
-const { canOpenBrowser } = require('../../src/utils/browser-detect');
-const { login, logout, whoami } = require('../../src/commands/auth');
+import * as api from '../../src/api.js';
+import * as config from '../../src/config.js';
+import * as output from '../../src/output.js';
+import inquirer from 'inquirer';
+import childProcess from 'child_process';
+import http from 'http';
+import { canOpenBrowser } from '../../src/utils/browser-detect.js';
+import { login, logout, whoami } from '../../src/commands/auth.js';
 
 // Silence console.log noise from showDashboard, whoami, etc.
-beforeAll(() => { jest.spyOn(console, 'log').mockImplementation(() => {}); });
+beforeAll(() => { vi.spyOn(console, 'log').mockImplementation(() => {}); });
 afterAll(() => { console.log.mockRestore(); mockExit.mockRestore(); });
 
 // Prevent process.exit from killing the test runner
-const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
+const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
   throw new Error('process.exit called');
 });
 
 describe('login', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Mock dashboard API calls to prevent hanging
     api.repos.list.mockResolvedValue({ configs: [] });
     api.scans.list.mockResolvedValue({ scans: [] });
@@ -115,7 +130,7 @@ describe('login', () => {
 
 describe('logout', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should clear auth when authenticated', async () => {
@@ -151,7 +166,7 @@ describe('logout', () => {
 
 describe('whoami', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should show login prompt when not authenticated', async () => {
@@ -191,7 +206,7 @@ describe('whoami', () => {
 
 describe('login manual token entry - settings URL', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     canOpenBrowser.mockReturnValue(false);
     // Simulate user providing a token via prompt
     inquirer.prompt.mockResolvedValue({ token: 'test-token' });
@@ -246,19 +261,19 @@ describe('browser auth - Windows URL escaping', () => {
     // Mock HTTP server to simulate OAuth callback
     const requestHandlers = [];
     const mockServer = {
-      listen: jest.fn((port, host, cb) => cb()),
-      address: jest.fn(() => ({ port: 12345 })),
-      on: jest.fn((event, handler) => { if (event === 'request') requestHandlers.push(handler); }),
-      close: jest.fn(),
+      listen: vi.fn((port, host, cb) => cb()),
+      address: vi.fn(() => ({ port: 12345 })),
+      on: vi.fn((event, handler) => { if (event === 'request') requestHandlers.push(handler); }),
+      close: vi.fn(),
     };
-    jest.spyOn(http, 'createServer').mockReturnValue(mockServer);
+    vi.spyOn(http, 'createServer').mockReturnValue(mockServer);
 
     const loginPromise = login({});
     await new Promise((r) => setImmediate(r));
 
     // Simulate OAuth callback with token
     const mockReq = { url: '/callback?token=test-jwt-token' };
-    const mockRes = { writeHead: jest.fn(), end: jest.fn() };
+    const mockRes = { writeHead: vi.fn(), end: vi.fn() };
     requestHandlers[0](mockReq, mockRes);
 
     await loginPromise;

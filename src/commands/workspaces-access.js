@@ -1,14 +1,14 @@
-const chalk = require('chalk');
-const { workspaces } = require('../api');
-const { requireAuth } = require('../config');
-const { resolveWorkspaceId } = require('./workspaces');
-const {
+import chalk from 'chalk';
+import { workspaces } from '../api.js';
+import { requireAuth } from '../config.js';
+import { resolveWorkspaceId } from './workspaces.js';
+import {
   createSpinner,
   outputTable,
   outputError,
   brand,
   formatRelativeTime,
-} = require('../output');
+} from '../output.js';
 
 /**
  * List workspace access
@@ -138,4 +138,4 @@ async function setVisibility(id, visibility, _options) {
   }
 }
 
-module.exports = { access, addAccess, removeAccess, setVisibility };
+export { access, addAccess, removeAccess, setVisibility };

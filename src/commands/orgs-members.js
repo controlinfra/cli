@@ -1,14 +1,14 @@
-const chalk = require('chalk');
-const { orgs } = require('../api');
-const { requireAuth } = require('../config');
-const { resolveOrgId } = require('./orgs');
-const {
+import chalk from 'chalk';
+import { orgs } from '../api.js';
+import { requireAuth } from '../config.js';
+import { resolveOrgId } from './orgs.js';
+import {
   createSpinner,
   outputTable,
   outputError,
   brand,
   formatRelativeTime,
-} = require('../output');
+} from '../output.js';
 
 /**
  * List organization members
@@ -293,15 +293,4 @@ async function accept(token, _options) {
   }
 }
 
-module.exports = {
-  members,
-  invite,
-  inviteLink,
-  invitations,
-  revoke,
-  removeMember,
-  updateRole,
-  leave,
-  transfer,
-  accept,
-};
+export { members, invite, inviteLink, invitations, revoke, removeMember, updateRole, leave, transfer, accept };

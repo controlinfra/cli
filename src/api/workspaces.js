@@ -1,4 +1,4 @@
-const { getClient } = require('./client');
+import { getClient } from './client.js';
 
 const workspaces = {
   async list() {
@@ -52,4 +52,4 @@ const workspaces = {
   },
 };
 
-module.exports = workspaces;
+export default workspaces;

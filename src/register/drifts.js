@@ -1,5 +1,5 @@
-const driftCommands = require('../commands/drifts');
-const driftActionCommands = require('../commands/drifts-actions');
+import * as driftCommands from '../commands/drifts.js';
+import * as driftActionCommands from '../commands/drifts-actions.js';
 
 function registerDrifts(program) {
   const drifts = program.command('drifts').description('Manage detected drifts');
@@ -62,4 +62,4 @@ function registerDrifts(program) {
     .action(driftActionCommands.exportDrifts);
 }
 
-module.exports = registerDrifts;
+export default registerDrifts;

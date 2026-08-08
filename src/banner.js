@@ -1,5 +1,5 @@
-const chalk = require('chalk');
-const { brand } = require('./output');
+import chalk from 'chalk';
+import { brand } from './output.js';
 
 const PURPLE = brand.hex.purple;
 const CYAN = brand.hex.cyan;
@@ -24,4 +24,4 @@ function gradientBanner() {
   console.log();
 }
 
-module.exports = { gradientBanner };
+export { gradientBanner };

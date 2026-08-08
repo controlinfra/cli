@@ -247,4 +247,4 @@ function getErrorHtml(error) {
 </html>`;
 }
 
-module.exports = { getSuccessHtml, getErrorHtml };
+export { getSuccessHtml, getErrorHtml };

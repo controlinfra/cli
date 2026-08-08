@@ -18,68 +18,90 @@
  *   - Never assert "output matches /word|word|word/" — that's the rubbish we're replacing.
  */
 
-jest.mock('../../src/api', () => ({
+vi.mock('../../src/api', async (importOriginal) => ({
+  ...(await importOriginal()),
   integrations: {
-    saveGcpCredentials: jest.fn(), getGcpCredentials: jest.fn(), deleteGcpCredentials: jest.fn(),
-    saveAwsCredentials: jest.fn(), getAwsCredentials: jest.fn(), deleteAwsCredentials: jest.fn(),
-    saveAzureCredentials: jest.fn(), getAzureCredentials: jest.fn(), deleteAzureCredentials: jest.fn(),
-    saveAnthropicKey: jest.fn(), verifyAnthropicKey: jest.fn(), deleteAnthropicKey: jest.fn(),
-    saveOpenaiKey: jest.fn(), verifyOpenaiKey: jest.fn(), deleteOpenaiKey: jest.fn(),
-    getAiProvider: jest.fn(), updateAiProvider: jest.fn(),
+    saveGcpCredentials: vi.fn(), getGcpCredentials: vi.fn(), deleteGcpCredentials: vi.fn(),
+    saveAwsCredentials: vi.fn(), getAwsCredentials: vi.fn(), deleteAwsCredentials: vi.fn(),
+    saveAzureCredentials: vi.fn(), getAzureCredentials: vi.fn(), deleteAzureCredentials: vi.fn(),
+    saveAnthropicKey: vi.fn(), verifyAnthropicKey: vi.fn(), deleteAnthropicKey: vi.fn(),
+    saveOpenaiKey: vi.fn(), verifyOpenaiKey: vi.fn(), deleteOpenaiKey: vi.fn(),
+    getAiProvider: vi.fn(), updateAiProvider: vi.fn(),
   },
-  scans: { get: jest.fn(), list: jest.fn() },
-  orgs: { list: jest.fn(), get: jest.fn(), getMembers: jest.fn(), getInvitations: jest.fn() },
-  auth: { logout: jest.fn() },
-  getClient: jest.fn(),
+  scans: { get: vi.fn(), list: vi.fn() },
+  orgs: { list: vi.fn(), get: vi.fn(), getMembers: vi.fn(), getInvitations: vi.fn() },
+  auth: { logout: vi.fn() },
+  getClient: vi.fn(),
 }));
 
-jest.mock('../../src/config', () => ({
-  requireAuth: jest.fn(),
-  saveAuth: jest.fn(),
-  clearAuth: jest.fn(),
-  getUser: jest.fn(() => ({ displayName: 'tester' })),
-  isAuthenticated: jest.fn(() => true),
-  getDriftGateDefaults: jest.fn(() => ({ failOnDrift: false, failOnSeverity: null, failOnNewOnly: false })),
+vi.mock('../../src/config', async (importOriginal) => ({
+  ...(await importOriginal()),
+  requireAuth: vi.fn(),
+  saveAuth: vi.fn(),
+  clearAuth: vi.fn(),
+  getUser: vi.fn(() => ({ displayName: 'tester' })),
+  isAuthenticated: vi.fn(() => true),
+  getDriftGateDefaults: vi.fn(() => ({ failOnDrift: false, failOnSeverity: null, failOnNewOnly: false })),
 }));
 
-const tableCalls = [];
-const boxCalls = [];
+const { tableCalls } = vi.hoisted(() => ({ tableCalls: [] }));
+const { boxCalls } = vi.hoisted(() => ({ boxCalls: [] }));
 const logCalls = [];
-const mockSpinner = {
+// vi.mock is hoisted above the file body, so anything its factory
+// references has to be hoisted too — hence vi.hoisted().
+const { mockSpinner } = vi.hoisted(() => ({ mockSpinner: {
   text: '',
-  start: jest.fn().mockReturnThis(),
-  stop: jest.fn(),
-  succeed: jest.fn(),
-  fail: jest.fn(),
-  warn: jest.fn(),
-  info: jest.fn(),
-};
-jest.mock('../../src/output', () => ({
+  start: vi.fn().mockReturnThis(),
+  stop: vi.fn(),
+  succeed: vi.fn(),
+  fail: vi.fn(),
+  warn: vi.fn(),
+  info: vi.fn(),
+} }));
+vi.mock('../../src/output', async (importOriginal) => ({
+  ...(await importOriginal()),
   brand: {
     hex: { purple: '#ac9fe0', cyan: '#bdedfa', shadow: '#3d3466' },
     purple: (s) => s, purpleBold: (s) => s, mid: (s) => s, light: (s) => s,
     cyan: (s) => s, cyanBold: (s) => s,
     gradient: Array(6).fill((s) => s),
   },
-  createSpinner: jest.fn(() => mockSpinner),
-  outputError: jest.fn(),
-  outputInfo: jest.fn(),
-  outputTable: jest.fn((headers, rows) => tableCalls.push({ headers, rows })),
-  outputBox: jest.fn((title, body) => boxCalls.push({ title, body })),
-  formatRelativeTime: jest.fn(() => 'just now'),
-  formatDuration: jest.fn(() => '1s'),
+  createSpinner: vi.fn(() => mockSpinner),
+  outputError: vi.fn(),
+  outputInfo: vi.fn(),
+  outputTable: vi.fn((headers, rows) => tableCalls.push({ headers, rows })),
+  outputBox: vi.fn((title, body) => boxCalls.push({ title, body })),
+  formatRelativeTime: vi.fn(() => 'just now'),
+  formatDuration: vi.fn(() => '1s'),
   colorStatus: (s) => s,
 }));
 
-jest.mock('inquirer', () => ({ prompt: jest.fn() }));
+// One shared fn behind both shapes. The commands call the default export
+// (`import inquirer from 'inquirer'` -> inquirer.prompt) while these tests
+// assert on the named one; two separate vi.fn()s meant the `--force` tests'
+// `not.toHaveBeenCalled()` could never fail no matter what the command did.
+const { promptMock } = vi.hoisted(() => ({ promptMock: vi.fn() }));
+vi.mock('inquirer', () => ({ default: { prompt: promptMock }, prompt: promptMock }));
 
-const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
+import * as api from '../../src/api.js';
+import { setup } from '../../src/commands/gcp-setup.js';
+import { waitForScan } from '../../src/commands/scan-wait.js';
+import { use } from '../../src/commands/ai.js';
+import { members } from '../../src/commands/orgs-members.js';
+import { info } from '../../src/commands/orgs.js';
+import { list } from '../../src/commands/orgs.js';
+import { logout } from '../../src/commands/auth.js';
+import * as inquirer from 'inquirer';
+import { invitations } from '../../src/commands/orgs-members.js';
+import * as orgsCmd from '../../src/commands/orgs.js';
+
+const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
   throw new Error('process.exit called');
 });
 
 beforeAll(() => {
-  jest.spyOn(console, 'log').mockImplementation((...args) => logCalls.push(args.join(' ')));
-  jest.spyOn(console, 'info').mockImplementation((...args) => logCalls.push(args.join(' ')));
+  vi.spyOn(console, 'log').mockImplementation((...args) => logCalls.push(args.join(' ')));
+  vi.spyOn(console, 'info').mockImplementation((...args) => logCalls.push(args.join(' ')));
 });
 afterAll(() => {
   console.log.mockRestore();
@@ -91,7 +113,7 @@ beforeEach(() => {
   tableCalls.length = 0;
   boxCalls.length = 0;
   logCalls.length = 0;
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 const renderedOutput = () => [
@@ -104,8 +126,6 @@ const renderedOutput = () => [
 // #3 — gcp setup must accept --workload-identity-federation + audience + SA
 // ───────────────────────────────────────────────────────────────────────────
 describe('regression #3: gcp setup --workload-identity-federation', () => {
-  const api = require('../../src/api');
-  const { setup } = require('../../src/commands/gcp-setup');
 
   it('saveGcpCredentials gets the WIF payload shape', async () => {
     api.integrations.saveGcpCredentials.mockResolvedValue({});
@@ -138,8 +158,6 @@ describe('regression #3: gcp setup --workload-identity-federation', () => {
 // #4 — scan wait must extract .message from structured error objects
 // ───────────────────────────────────────────────────────────────────────────
 describe('regression #4: scan wait renders structured errors readably', () => {
-  const api = require('../../src/api');
-  const { waitForScan } = require('../../src/commands/scan-wait');
 
   it('extracts .message from { message } error instead of [object Object]', async () => {
     api.scans.get.mockResolvedValue({
@@ -164,8 +182,6 @@ describe('regression #4: scan wait renders structured errors readably', () => {
 // #5 — ai use contract: { provider } payload normalized to { defaultProvider }
 // ───────────────────────────────────────────────────────────────────────────
 describe('regression #5a: ai use sends defaultProvider', () => {
-  const api = require('../../src/api');
-  const { use } = require('../../src/commands/ai');
 
   it('updateAiProvider payload contains defaultProvider key', async () => {
     api.integrations.verifyAnthropicKey.mockResolvedValue({});
@@ -189,10 +205,22 @@ describe('regression #5b: getAiProvider unwraps { settings } envelope', () => {
   // commands read data.provider / data.hasCustomKey while the server
   // returned data.settings.defaultProvider / hasAnthropicKey. The fix
   // normalises at the api boundary.
-  jest.isolateModules(() => {
-    const mockGet = jest.fn();
-    jest.doMock('../../src/api/client', () => ({ getClient: () => ({ get: mockGet, put: jest.fn() }) }));
-    const integrations = require('../../src/api/integrations');
+  // vi.isolateModules' callback is synchronous, so the module under test cannot
+  // be awaited inside it. Isolate in beforeAll instead: reset the registry,
+  // register the mock, then import — which is what isolateModules did anyway.
+  let integrations;
+  let mockGet;
+
+  beforeAll(async () => {
+    vi.resetModules();
+    mockGet = vi.fn();
+    vi.doMock('../../src/api/client.js', () => ({ getClient: () => ({ get: mockGet, put: vi.fn() }) }));
+    // integrations.js default-exports the object; under CJS `require` handed it
+    // back directly, under ESM `import()` returns the namespace around it.
+    integrations = (await import('../../src/api/integrations.js')).default;
+  });
+
+  {
 
     it('flattens { success, settings: { defaultProvider, hasAnthropicKey, hasOpenAIKey } } to { provider, hasCustomKey, ... }', async () => {
       mockGet.mockResolvedValue({ data: {
@@ -212,15 +240,13 @@ describe('regression #5b: getAiProvider unwraps { settings } envelope', () => {
       expect(result.provider).toBe('openai');
       expect(result.hasCustomKey).toBe(true);
     });
-  });
+  }
 });
 
 // ───────────────────────────────────────────────────────────────────────────
 // #7 — orgs members reads populated m.userId.{email,displayName} not m.user.*
 // ───────────────────────────────────────────────────────────────────────────
 describe('regression #7: orgs members reads populated userId', () => {
-  const api = require('../../src/api');
-  const { members } = require('../../src/commands/orgs-members');
 
   it('renders displayName + email from populated m.userId, not m.user', async () => {
     api.orgs.list.mockResolvedValue([{ _id: 'org-1', name: 'Demo' }]);
@@ -244,8 +270,6 @@ describe('regression #7: orgs members reads populated userId', () => {
 // #6/#8 — orgs info + orgs list read memberCount from org.stats.memberCount
 // ───────────────────────────────────────────────────────────────────────────
 describe('regression #6: orgs info shows correct member count + owner', () => {
-  const api = require('../../src/api');
-  const { info } = require('../../src/commands/orgs');
 
   it('reads memberCount from stats.memberCount + owner from populated members', async () => {
     api.orgs.list.mockResolvedValue([{ _id: 'org-1', name: 'Demo' }]);
@@ -266,8 +290,6 @@ describe('regression #6: orgs info shows correct member count + owner', () => {
 });
 
 describe('regression #8: orgs list shows memberCount column', () => {
-  const api = require('../../src/api');
-  const { list } = require('../../src/commands/orgs');
 
   it('reads stats.memberCount, not flat memberCount', async () => {
     api.orgs.list.mockResolvedValue([
@@ -283,7 +305,6 @@ describe('regression #8: orgs list shows memberCount column', () => {
 // #9 — logout warns when CONTROLINFRA_TOKEN env var is still set
 // ───────────────────────────────────────────────────────────────────────────
 describe('regression #9: logout warns about lingering env-var auth', () => {
-  const { logout } = require('../../src/commands/auth');
 
   it('mentions CONTROLINFRA_TOKEN env var in output when set', async () => {
     const prev = process.env.CONTROLINFRA_TOKEN;
@@ -318,13 +339,18 @@ describe('regression #10: --quiet silences spinners', () => {
   // testing the Commander hook in isolation needs program-level setup the
   // existing tests don't have scaffolding for.
 
-  it('createSpinner returns a no-op spinner when __CLI_QUIET=1', () => {
+  it('createSpinner returns a no-op spinner when __CLI_QUIET=1', async () => {
     const prev = process.env.__CLI_QUIET;
     process.env.__CLI_QUIET = '1';
     try {
-      jest.isolateModules(() => {
-        jest.unmock('../../src/output');
-        const { createSpinner: real } = require('../../src/output');
+      // importActual, NOT vi.unmock: Vitest hoists vi.unmock to the top of the
+      // FILE (Jest's babel plugin only hoisted it within the enclosing block),
+      // so an unmock written inside this test cancels the module-level
+      // vi.mock('../../src/output') for every test in the file — the mocked
+      // outputTable/outputBox stop recording and their assertions see ''.
+      // importActual reaches past the mock for this one call instead.
+      {
+        const { createSpinner: real } = await vi.importActual('../../src/output.js');
         const spinner = real('starting work');
         // No-op spinner returns this from start/succeed/fail for chainability
         const started = spinner.start();
@@ -333,7 +359,7 @@ describe('regression #10: --quiet silences spinners', () => {
         // easily assert no-write, but we can assert the no-op interface is honored).
         expect(() => spinner.succeed('done')).not.toThrow();
         expect(() => spinner.fail('boom')).not.toThrow();
-      });
+      }
     } finally {
       if (prev === undefined) delete process.env.__CLI_QUIET;
       else process.env.__CLI_QUIET = prev;
@@ -345,11 +371,9 @@ describe('regression #10: --quiet silences spinners', () => {
 // #11 — aws/azure/gcp remove --force skips inquirer prompt
 // ───────────────────────────────────────────────────────────────────────────
 describe('regression #11: cloud provider remove --force skips confirm', () => {
-  const api = require('../../src/api');
-  const inquirer = require('inquirer');
 
   it('aws remove --force does not call inquirer.prompt', async () => {
-    const { remove } = require('../../src/commands/aws');
+    const { remove } = await import('../../src/commands/aws.js');
     api.integrations.deleteAwsCredentials.mockResolvedValue({});
     await remove({ force: true });
     expect(inquirer.prompt).not.toHaveBeenCalled();
@@ -357,7 +381,7 @@ describe('regression #11: cloud provider remove --force skips confirm', () => {
   });
 
   it('azure remove --force does not call inquirer.prompt', async () => {
-    const { remove } = require('../../src/commands/azure');
+    const { remove } = await import('../../src/commands/azure.js');
     api.integrations.deleteAzureCredentials.mockResolvedValue({});
     await remove({ force: true });
     expect(inquirer.prompt).not.toHaveBeenCalled();
@@ -365,7 +389,7 @@ describe('regression #11: cloud provider remove --force skips confirm', () => {
   });
 
   it('gcp remove --force does not call inquirer.prompt', async () => {
-    const { remove } = require('../../src/commands/gcp');
+    const { remove } = await import('../../src/commands/gcp.js');
     api.integrations.deleteGcpCredentials.mockResolvedValue({});
     await remove({ force: true });
     expect(inquirer.prompt).not.toHaveBeenCalled();
@@ -373,7 +397,7 @@ describe('regression #11: cloud provider remove --force skips confirm', () => {
   });
 
   it('aws remove (no --force) DOES prompt — confirms the flag is the only escape', async () => {
-    const { remove } = require('../../src/commands/aws');
+    const { remove } = await import('../../src/commands/aws.js');
     inquirer.prompt.mockResolvedValue({ confirm: false });
     api.integrations.deleteAwsCredentials.mockResolvedValue({});
     await remove({});
@@ -386,8 +410,6 @@ describe('regression #11: cloud provider remove --force skips confirm', () => {
 // #14 — orgs invitations renders link-invitation rows distinctly from emails
 // ───────────────────────────────────────────────────────────────────────────
 describe('regression #14: invite-link rows show "(link invitation)"', () => {
-  const api = require('../../src/api');
-  const { invitations } = require('../../src/commands/orgs-members');
 
   it('renders "(link invitation)" for rows with no email', async () => {
     api.orgs.list.mockResolvedValue([{ _id: 'org-1', name: 'Demo' }]);
@@ -408,8 +430,6 @@ describe('regression #14: invite-link rows show "(link invitation)"', () => {
 // #15 — orgs switch accepts slug as a switch identifier
 // ───────────────────────────────────────────────────────────────────────────
 describe('regression #15: orgs switch by slug', () => {
-  const orgsCmd = require('../../src/commands/orgs');
-  const api = require('../../src/api');
 
   it('resolveOrgId matches by slug', async () => {
     api.orgs.list.mockResolvedValue([

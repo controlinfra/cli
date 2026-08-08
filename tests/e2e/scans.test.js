@@ -2,11 +2,11 @@
  * E2E Tests for Scan Commands — `scan list`, `scan status`, help, drift-gate flags.
  */
 
-const { runCLI, apiCall, itAuthenticated } = require('./helpers');
-const {
+import { runCLI, apiCall, itAuthenticated } from './helpers.js';
+import {
   expectListOutput, expectHelpLists, expectJsonOutput, expectHelpHasFlags,
   expectNotFoundError, expectNoBugMarkers,
-} = require('./assertions');
+} from './assertions.js';
 
 describe('CLI Scan Commands', () => {
   describe('scan list', () => {

@@ -1,36 +1,41 @@
 'use strict';
 
-jest.mock('../../src/api', () => ({
-  runners: { list: jest.fn(), get: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn(), regenerateToken: jest.fn(), markOffline: jest.fn(), getSetup: jest.fn() },
-  workspaces: { list: jest.fn(), get: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn(), setDefault: jest.fn(), getAccess: jest.fn(), addAccess: jest.fn(), removeAccess: jest.fn(), setVisibility: jest.fn() },
+vi.mock('../../src/api', async (importOriginal) => ({
+  ...(await importOriginal()),
+  runners: { list: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn(), regenerateToken: vi.fn(), markOffline: vi.fn(), getSetup: vi.fn() },
+  workspaces: { list: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn(), setDefault: vi.fn(), getAccess: vi.fn(), addAccess: vi.fn(), removeAccess: vi.fn(), setVisibility: vi.fn() },
 }));
-jest.mock('../../src/config', () => ({ requireAuth: jest.fn(), saveAuth: jest.fn(), getUser: jest.fn(), isAuthenticated: jest.fn(), getApiUrl: jest.fn(() => 'https://api.controlinfra.com') }));
-const mockSpinner = { start: jest.fn().mockReturnThis(), stop: jest.fn(), succeed: jest.fn(), fail: jest.fn(), warn: jest.fn(), set text(v) { this._text = v; }, get text() { return this._text; } };
-jest.mock('../../src/output', () => ({
-  brand: { purple: jest.fn((s) => s), purpleBold: jest.fn((s) => s), mid: jest.fn((s) => s), light: jest.fn((s) => s), cyan: jest.fn((s) => s), cyanBold: jest.fn((s) => s), gradient: Array(6).fill(jest.fn((s) => s)) },
-  createSpinner: jest.fn(() => mockSpinner), outputError: jest.fn(), outputTable: jest.fn(), outputInfo: jest.fn(), outputBox: jest.fn(), formatRelativeTime: jest.fn(() => 'just now'), colorStatus: jest.fn((s) => s),
+vi.mock('../../src/config', async (importOriginal) => ({
+  ...(await importOriginal()), requireAuth: vi.fn(), saveAuth: vi.fn(), getUser: vi.fn(), isAuthenticated: vi.fn(), getApiUrl: vi.fn(() => 'https://api.controlinfra.com') }));
+// vi.mock is hoisted above the file body, so anything its factory
+// references has to be hoisted too — hence vi.hoisted().
+const { mockSpinner } = vi.hoisted(() => ({ mockSpinner: { start: vi.fn().mockReturnThis(), stop: vi.fn(), succeed: vi.fn(), fail: vi.fn(), warn: vi.fn(), set text(v) { this._text = v; }, get text() { return this._text; } } }));
+vi.mock('../../src/output', async (importOriginal) => ({
+  ...(await importOriginal()),
+  brand: { purple: vi.fn((s) => s), purpleBold: vi.fn((s) => s), mid: vi.fn((s) => s), light: vi.fn((s) => s), cyan: vi.fn((s) => s), cyanBold: vi.fn((s) => s), gradient: Array(6).fill(vi.fn((s) => s)) },
+  createSpinner: vi.fn(() => mockSpinner), outputError: vi.fn(), outputTable: vi.fn(), outputInfo: vi.fn(), outputBox: vi.fn(), formatRelativeTime: vi.fn(() => 'just now'), colorStatus: vi.fn((s) => s),
 }));
-jest.mock('inquirer', () => ({ prompt: jest.fn() }));
+vi.mock('inquirer', () => ({ default: { prompt: vi.fn() }, prompt: vi.fn() }));
 
-const api = require('../../src/api');
-const output = require('../../src/output');
-const inquirer = require('inquirer');
-const { add: addRunner, status, remove: removeRunner, regenerateToken } = require('../../src/commands/runners');
-const { update: updateRunner, markOffline } = require('../../src/commands/runners-actions');
-const { setup, resolveRunnerId } = require('../../src/commands/runners-setup');
-const { add: addWs, update: updateWs, remove: removeWs, setDefault } = require('../../src/commands/workspaces');
-const { access, addAccess, removeAccess, setVisibility } = require('../../src/commands/workspaces-access');
+import * as api from '../../src/api.js';
+import * as output from '../../src/output.js';
+import inquirer from 'inquirer';
+import { add as addRunner, status, remove as removeRunner, regenerateToken } from '../../src/commands/runners.js';
+import { update as updateRunner, markOffline } from '../../src/commands/runners-actions.js';
+import { setup, resolveRunnerId } from '../../src/commands/runners-setup.js';
+import { add as addWs, update as updateWs, remove as removeWs, setDefault } from '../../src/commands/workspaces.js';
+import { access, addAccess, removeAccess, setVisibility } from '../../src/commands/workspaces-access.js';
 
-beforeAll(() => { jest.spyOn(console, 'log').mockImplementation(() => {}); });
+beforeAll(() => { vi.spyOn(console, 'log').mockImplementation(() => {}); });
 afterAll(() => { console.log.mockRestore(); mockExit.mockRestore(); });
-const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit called'); });
+const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit called'); });
 const jsonCmd = { parent: { parent: { opts: () => ({ json: true }) } } };
 const noJsonCmd = { parent: { parent: { opts: () => ({ json: false }) } } };
 const rList = { runners: [{ id: 'r1', _id: 'r1', name: 'runner-1' }] };
 const wList = { workspaces: [{ _id: 'ws1', name: 'my-workspace' }] };
 
 describe('runners add', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('creates a runner', async () => {
     api.runners.create.mockResolvedValue({ runner: { id: 'r1', name: 'test', token: 'tok' } });
     await addRunner('test', {}, noJsonCmd);
@@ -49,7 +54,7 @@ describe('runners add', () => {
 });
 
 describe('runners status', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('shows runner status', async () => {
     api.runners.list.mockResolvedValue(rList);
     api.runners.get.mockResolvedValue({ runner: { id: 'r1', name: 'runner-1', status: 'online' } });
@@ -64,7 +69,7 @@ describe('runners status', () => {
 });
 
 describe('runners remove', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('removes with --force', async () => {
     api.runners.list.mockResolvedValue(rList);
     api.runners.delete.mockResolvedValue({});
@@ -79,7 +84,7 @@ describe('runners remove', () => {
 });
 
 describe('runners regenerateToken', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('regenerates token', async () => {
     api.runners.list.mockResolvedValue(rList);
     api.runners.regenerateToken.mockResolvedValue({ token: 'new-tok' });
@@ -100,7 +105,7 @@ describe('runners regenerateToken', () => {
 });
 
 describe('runners update', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('updates runner name', async () => {
     api.runners.list.mockResolvedValue(rList);
     api.runners.update.mockResolvedValue({ runner: { id: 'r1', name: 'new-name' } });
@@ -120,7 +125,7 @@ describe('runners update', () => {
 });
 
 describe('runners markOffline', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('marks runner offline', async () => {
     api.runners.list.mockResolvedValue(rList);
     api.runners.markOffline.mockResolvedValue({});
@@ -135,7 +140,7 @@ describe('runners markOffline', () => {
 });
 
 describe('runners setup', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('generates setup script', async () => {
     api.runners.list.mockResolvedValue(rList);
     api.runners.regenerateToken.mockResolvedValue({ token: 'tok' });
@@ -151,7 +156,7 @@ describe('runners setup', () => {
 });
 
 describe('resolveRunnerId', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('resolves exact match', async () => {
     api.runners.list.mockResolvedValue({ runners: [{ id: 'r1' }] });
     expect(await resolveRunnerId('r1')).toBe('r1');
@@ -163,7 +168,7 @@ describe('resolveRunnerId', () => {
 });
 
 describe('workspaces add', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('creates a workspace', async () => {
     api.workspaces.create.mockResolvedValue({ workspace: { _id: 'ws1' } });
     await addWs('my-ws', { cloudProvider: 'aws' });
@@ -179,7 +184,7 @@ describe('workspaces add', () => {
 });
 
 describe('workspaces update', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('updates workspace', async () => {
     api.workspaces.list.mockResolvedValue(wList);
     api.workspaces.update.mockResolvedValue({ workspace: { _id: 'ws1', name: 'new' } });
@@ -198,7 +203,7 @@ describe('workspaces update', () => {
 });
 
 describe('workspaces remove', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('removes with --force', async () => {
     api.workspaces.list.mockResolvedValue(wList);
     api.workspaces.delete.mockResolvedValue({});
@@ -213,7 +218,7 @@ describe('workspaces remove', () => {
 });
 
 describe('workspaces setDefault', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('sets default workspace', async () => {
     api.workspaces.list.mockResolvedValue(wList);
     api.workspaces.setDefault.mockResolvedValue({});
@@ -227,7 +232,7 @@ describe('workspaces setDefault', () => {
 });
 
 describe('workspaces access', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('lists access', async () => {
     api.workspaces.list.mockResolvedValue(wList);
     api.workspaces.getAccess.mockResolvedValue({ members: [{ userId: 'u1', role: 'admin' }] });
@@ -247,7 +252,7 @@ describe('workspaces access', () => {
 });
 
 describe('workspaces addAccess', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('grants access with role', async () => {
     api.workspaces.list.mockResolvedValue(wList);
     api.workspaces.addAccess.mockResolvedValue({});
@@ -261,7 +266,7 @@ describe('workspaces addAccess', () => {
 });
 
 describe('workspaces removeAccess', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('removes access', async () => {
     api.workspaces.list.mockResolvedValue(wList);
     api.workspaces.removeAccess.mockResolvedValue({});
@@ -275,7 +280,7 @@ describe('workspaces removeAccess', () => {
 });
 
 describe('workspaces setVisibility', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
   it('sets visibility to org-wide', async () => {
     api.workspaces.list.mockResolvedValue(wList);
     api.workspaces.setVisibility.mockResolvedValue({});

@@ -1,6 +1,6 @@
-const runnerCommands = require('../commands/runners');
-const runnerSetupCommands = require('../commands/runners-setup');
-const runnerActionCommands = require('../commands/runners-actions');
+import * as runnerCommands from '../commands/runners.js';
+import * as runnerSetupCommands from '../commands/runners-setup.js';
+import * as runnerActionCommands from '../commands/runners-actions.js';
 
 function registerRunners(program) {
   const runners = program.command('runners').description('Manage self-hosted runners');
@@ -54,4 +54,4 @@ function registerRunners(program) {
     .action(runnerActionCommands.markOffline);
 }
 
-module.exports = registerRunners;
+export default registerRunners;

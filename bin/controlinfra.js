@@ -5,6 +5,6 @@
  * Infrastructure Drift Detection from the command line
  */
 
-const { program } = require('../src/index');
+import { program } from '../src/index.js';
 
 program.parse(process.argv);

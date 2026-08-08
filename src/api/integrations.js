@@ -1,4 +1,4 @@
-const { getClient } = require('./client');
+import { getClient } from './client.js';
 
 const integrations = {
   // Slack
@@ -143,4 +143,4 @@ const integrations = {
   },
 };
 
-module.exports = integrations;
+export default integrations;

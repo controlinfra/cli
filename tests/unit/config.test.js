@@ -1,16 +1,16 @@
 'use strict';
 
-const os = require('os');
-const path = require('path');
-const fs = require('fs');
-const { getDriftGateDefaults } = require('../../src/config');
+import os from 'os';
+import path from 'path';
+import fs from 'fs';
+import { getDriftGateDefaults } from '../../src/config.js';
 
 describe('getDriftGateDefaults', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
     // Reset environment before each test
-    jest.resetModules();
+    vi.resetModules();
     process.env = { ...originalEnv };
     // Clear drift gate env vars
     delete process.env.CONTROLINFRA_FAIL_ON_DRIFT;
@@ -119,7 +119,7 @@ describe('getApiUrl', () => {
   let tmpDir;
 
   beforeEach(() => {
-    jest.resetModules();
+    vi.resetModules();
     process.env = { ...originalEnv };
     delete process.env.CONTROLINFRA_API_URL;
     // Use a temp directory so tests don't touch the real config
@@ -135,22 +135,22 @@ describe('getApiUrl', () => {
     try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* ignore */ }
   });
 
-  it('should return env var when CONTROLINFRA_API_URL is set', () => {
+  it('should return env var when CONTROLINFRA_API_URL is set', async () => {
     process.env.CONTROLINFRA_API_URL = 'https://custom.example.com';
-    const { getApiUrl } = require('../../src/config');
+    const { getApiUrl } = await import('../../src/config.js');
 
     expect(getApiUrl()).toBe('https://custom.example.com');
   });
 
-  it('should return default api.controlinfra.com for fresh installs', () => {
-    const { getApiUrl } = require('../../src/config');
+  it('should return default api.controlinfra.com for fresh installs', async () => {
+    const { getApiUrl } = await import('../../src/config.js');
 
     expect(getApiUrl()).toBe('https://api.controlinfra.com');
   });
 
-  it('should migrate stale www.controlinfra.com to api.controlinfra.com', () => {
+  it('should migrate stale www.controlinfra.com to api.controlinfra.com', async () => {
     // Simulate a config file with the old default
-    const { config, getApiUrl } = require('../../src/config');
+    const { config, getApiUrl } = await import('../../src/config.js');
     config.set('apiUrl', 'https://www.controlinfra.com');
 
     const url = getApiUrl();
@@ -160,16 +160,16 @@ describe('getApiUrl', () => {
     expect(config.get('apiUrl')).toBe('https://api.controlinfra.com');
   });
 
-  it('should not migrate a custom API URL', () => {
-    const { config, getApiUrl } = require('../../src/config');
+  it('should not migrate a custom API URL', async () => {
+    const { config, getApiUrl } = await import('../../src/config.js');
     config.set('apiUrl', 'https://self-hosted.example.com');
 
     expect(getApiUrl()).toBe('https://self-hosted.example.com');
   });
 
-  it('should prefer env var over stored config (no migration applied)', () => {
+  it('should prefer env var over stored config (no migration applied)', async () => {
     process.env.CONTROLINFRA_API_URL = 'https://override.example.com';
-    const { config, getApiUrl } = require('../../src/config');
+    const { config, getApiUrl } = await import('../../src/config.js');
     config.set('apiUrl', 'https://www.controlinfra.com');
 
     expect(getApiUrl()).toBe('https://override.example.com');

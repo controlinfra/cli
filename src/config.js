@@ -1,5 +1,5 @@
-const Conf = require('conf');
-const chalk = require('chalk');
+import Conf from 'conf';
+import chalk from 'chalk';
 
 /**
  * Configuration storage for Controlinfra CLI
@@ -196,21 +196,4 @@ function getDriftGateDefaults() {
   };
 }
 
-module.exports = {
-  config,
-  getApiUrl,
-  getToken,
-  isAuthenticated,
-  saveAuth,
-  clearAuth,
-  getUser,
-  requireAuth,
-  getOutputFormat,
-  isQuiet,
-  setDefaultWorkspace,
-  getDefaultWorkspace,
-  setApiUrl,
-  reset,
-  getConfigPath,
-  getDriftGateDefaults,
-};
+export { config, getApiUrl, getToken, isAuthenticated, saveAuth, clearAuth, getUser, requireAuth, getOutputFormat, isQuiet, setDefaultWorkspace, getDefaultWorkspace, setApiUrl, reset, getConfigPath, getDriftGateDefaults };

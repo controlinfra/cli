@@ -1,6 +1,6 @@
-const scanCommands = require('../commands/scan');
-const scanWaitCommands = require('../commands/scan-wait');
-const scanActionCommands = require('../commands/scan-actions');
+import * as scanCommands from '../commands/scan.js';
+import * as scanWaitCommands from '../commands/scan-wait.js';
+import * as scanActionCommands from '../commands/scan-actions.js';
 
 function registerScan(program) {
   const scan = program.command('scan').description('Manage drift scans');
@@ -62,4 +62,4 @@ function registerScan(program) {
     .action(scanActionCommands.deleteScan);
 }
 
-module.exports = registerScan;
+export default registerScan;

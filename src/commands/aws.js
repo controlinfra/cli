@@ -1,8 +1,8 @@
-const chalk = require('chalk');
-const inquirer = require('inquirer');
-const { integrations } = require('../api');
-const { requireAuth } = require('../config');
-const { createSpinner, outputError, outputBox, brand } = require('../output');
+import chalk from 'chalk';
+import inquirer from 'inquirer';
+import { integrations } from '../api.js';
+import { requireAuth } from '../config.js';
+import { createSpinner, outputError, outputBox, brand } from '../output.js';
 
 /**
  * Setup AWS credentials
@@ -198,9 +198,4 @@ function maskAccessKey(key) {
   return key.slice(0, 4) + '****' + key.slice(-4);
 }
 
-module.exports = {
-  setup,
-  status,
-  test,
-  remove,
-};
+export { setup, status, test, remove };

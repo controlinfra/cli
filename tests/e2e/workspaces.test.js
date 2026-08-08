@@ -2,11 +2,11 @@
  * E2E Tests for Workspace Commands — `workspaces list`, `workspaces info`, help.
  */
 
-const { runCLI, apiCall, itAuthenticated } = require('./helpers');
-const {
+import { runCLI, apiCall, itAuthenticated } from './helpers.js';
+import {
   expectListOutput, expectHelpLists, expectJsonOutput,
   expectNotFoundError, expectNoBugMarkers,
-} = require('./assertions');
+} from './assertions.js';
 
 describe('CLI Workspace Commands', () => {
   describe('workspaces list', () => {

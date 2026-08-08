@@ -1,7 +1,7 @@
-const chalk = require('chalk');
-const { runners } = require('../api');
-const { requireAuth, getApiUrl } = require('../config');
-const { createSpinner, outputError, brand } = require('../output');
+import chalk from 'chalk';
+import { runners } from '../api.js';
+import { requireAuth, getApiUrl } from '../config.js';
+import { createSpinner, outputError, brand } from '../output.js';
 
 /**
  * Resolve a partial ID to a full ID by matching against existing runners
@@ -104,4 +104,4 @@ async function setup(runnerId, options, command) {
   }
 }
 
-module.exports = { setup, resolveRunnerId };
+export { setup, resolveRunnerId };

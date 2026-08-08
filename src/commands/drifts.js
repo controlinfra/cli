@@ -1,7 +1,7 @@
-const chalk = require('chalk');
-const { drifts } = require('../api');
-const { requireAuth } = require('../config');
-const {
+import chalk from 'chalk';
+import { drifts } from '../api.js';
+import { requireAuth } from '../config.js';
+import {
   brand,
   createSpinner,
   outputTable,
@@ -10,7 +10,7 @@ const {
   colorStatus,
   formatRelativeTime,
   truncate,
-} = require('../output');
+} from '../output.js';
 
 /**
  * List drifts
@@ -232,11 +232,4 @@ async function resolve(driftId, _options) {
   }
 }
 
-module.exports = {
-  list,
-  show,
-  fix,
-  createPR,
-  ignore,
-  resolve,
-};
+export { list, show, fix, createPR, ignore, resolve };

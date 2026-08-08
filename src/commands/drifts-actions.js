@@ -1,13 +1,13 @@
-const fs = require('fs');
-const chalk = require('chalk');
-const { drifts } = require('../api');
-const { requireAuth } = require('../config');
-const {
+import fs from 'fs';
+import chalk from 'chalk';
+import { drifts } from '../api.js';
+import { requireAuth } from '../config.js';
+import {
   brand,
   createSpinner,
   outputError,
   outputBox,
-} = require('../output');
+} from '../output.js';
 
 /**
  * Show drift statistics
@@ -131,4 +131,4 @@ async function exportDrifts(options) {
   }
 }
 
-module.exports = { stats, reanalyze, exportDrifts };
+export { stats, reanalyze, exportDrifts };

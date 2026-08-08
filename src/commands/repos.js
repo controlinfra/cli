@@ -1,7 +1,7 @@
-const chalk = require('chalk');
-const { repos } = require('../api');
-const { requireAuth } = require('../config');
-const {
+import chalk from 'chalk';
+import { repos } from '../api.js';
+import { requireAuth } from '../config.js';
+import {
   createSpinner,
   outputTable,
   outputError,
@@ -9,7 +9,8 @@ const {
   colorStatus,
   brand,
   formatRelativeTime,
-} = require('../output');
+} from '../output.js';
+import inquirer from 'inquirer';
 
 /**
  * List configured repositories
@@ -94,7 +95,6 @@ async function remove(id, options) {
   requireAuth();
 
   if (!options.force) {
-    const inquirer = require('inquirer');
     const { confirm } = await inquirer.prompt([
       {
         type: 'confirm',
@@ -213,10 +213,4 @@ async function stats(id, options, command) {
   }
 }
 
-module.exports = {
-  list,
-  resolveRepoId,
-  remove,
-  info,
-  stats,
-};
+export { list, resolveRepoId, remove, info, stats };
