@@ -1,6 +1,6 @@
 'use strict';
 
-const { execSync } = require('child_process');
+import { execSync } from 'child_process';
 
 /**
  * Heuristically detect if a browser can be opened on this machine.
@@ -40,4 +40,4 @@ function canOpenBrowser() {
   return false;
 }
 
-module.exports = { canOpenBrowser };
+export { canOpenBrowser };

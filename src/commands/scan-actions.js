@@ -1,9 +1,9 @@
-const chalk = require('chalk');
-const inquirer = require('inquirer');
-const { scans } = require('../api');
-const { requireAuth } = require('../config');
-const { createSpinner, outputError, brand } = require('../output');
-const { resolveScanId } = require('./scan-wait');
+import chalk from 'chalk';
+import inquirer from 'inquirer';
+import { scans } from '../api.js';
+import { requireAuth } from '../config.js';
+import { createSpinner, outputError, brand } from '../output.js';
+import { resolveScanId } from './scan-wait.js';
 
 /**
  * Retry a failed scan
@@ -73,4 +73,4 @@ async function deleteScan(scanId, options) {
   }
 }
 
-module.exports = { retry, deleteScan };
+export { retry, deleteScan };

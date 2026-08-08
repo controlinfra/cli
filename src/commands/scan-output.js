@@ -1,6 +1,6 @@
-const chalk = require('chalk');
-const { brand, outputTable, outputError, truncate, colorStatus } = require('../output');
-const { getApiUrl } = require('../config');
+import chalk from 'chalk';
+import { brand, outputTable, outputError, truncate, colorStatus } from '../output.js';
+import { getApiUrl } from '../config.js';
 
 /**
  * Evaluate drift gate conditions and return exit code
@@ -121,4 +121,4 @@ function outputDriftTable(scanId, driftDetails, driftResults, isJson, gateOption
   console.log(`  ${chalk.dim('View details:')} ${brand.cyan(consoleUrl)}`);
 }
 
-module.exports = { evaluateDriftGate, outputDriftTable };
+export { evaluateDriftGate, outputDriftTable };

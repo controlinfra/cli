@@ -1,15 +1,16 @@
-const chalk = require('chalk');
-const inquirer = require('inquirer');
-const { orgs } = require('../api');
-const { requireAuth } = require('../config');
-const {
+import chalk from 'chalk';
+import inquirer from 'inquirer';
+import { orgs } from '../api.js';
+import { requireAuth } from '../config.js';
+import {
   createSpinner,
   outputTable,
   outputError,
   outputBox,
   brand,
   formatRelativeTime,
-} = require('../output');
+} from '../output.js';
+import { config as cliConfig } from '../config.js';
 
 /**
  * List organizations
@@ -331,7 +332,6 @@ async function switchOrg(idOrName, _options) {
       target = answer.org;
     }
 
-    const { config: cliConfig } = require('../config');
     cliConfig.set('orgId', target.id || target._id);
     if (spinner.isSpinning) spinner.succeed(`Switched to ${brand.cyan(target.name)}`);
     else console.log(`\n${brand.cyan('✔')} Switched to ${brand.cyan(target.name)}`);
@@ -343,4 +343,4 @@ async function switchOrg(idOrName, _options) {
   }
 }
 
-module.exports = { list, create, info, update, deleteOrg, resolveOrgId, switchOrg };
+export { list, create, info, update, deleteOrg, resolveOrgId, switchOrg };

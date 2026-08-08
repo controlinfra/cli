@@ -1,13 +1,17 @@
 'use strict';
 
-const { execSync } = require('child_process');
+import { execSync } from 'child_process';
 
-jest.mock('child_process', () => ({
-  execSync: jest.fn(),
-}));
+vi.mock('child_process', () => {
+  const mocked = {
+  execSync: vi.fn(),
+};
+  // source imports this as a default (`import cp from 'child_process'`)
+  return { ...mocked, default: mocked };
+});
 
 // Must require after mocking
-const { canOpenBrowser } = require('../../src/utils/browser-detect');
+import { canOpenBrowser } from '../../src/utils/browser-detect.js';
 
 describe('canOpenBrowser', () => {
   const originalPlatform = process.platform;
@@ -16,7 +20,7 @@ describe('canOpenBrowser', () => {
   afterEach(() => {
     Object.defineProperty(process, 'platform', { value: originalPlatform });
     process.env = { ...originalEnv };
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should return true on darwin', () => {

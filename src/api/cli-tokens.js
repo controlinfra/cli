@@ -1,4 +1,4 @@
-const { getClient } = require('./client');
+import { getClient } from './client.js';
 
 const cliTokens = {
   async list() {
@@ -17,4 +17,4 @@ const cliTokens = {
   },
 };
 
-module.exports = cliTokens;
+export default cliTokens;

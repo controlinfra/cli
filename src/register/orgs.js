@@ -1,5 +1,5 @@
-const orgCommands = require('../commands/orgs');
-const orgMemberCommands = require('../commands/orgs-members');
+import * as orgCommands from '../commands/orgs.js';
+import * as orgMemberCommands from '../commands/orgs-members.js';
 
 function registerOrgs(program) {
   const orgs = program.command('orgs').description('Manage organizations / teams');
@@ -89,4 +89,4 @@ function registerOrgs(program) {
     .action(orgMemberCommands.accept);
 }
 
-module.exports = registerOrgs;
+export default registerOrgs;

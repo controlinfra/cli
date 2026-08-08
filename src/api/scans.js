@@ -1,4 +1,4 @@
-const { getClient } = require('./client');
+import { getClient } from './client.js';
 
 const scans = {
   async list(params = {}) {
@@ -52,4 +52,4 @@ const scans = {
   },
 };
 
-module.exports = scans;
+export default scans;

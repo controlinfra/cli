@@ -1,8 +1,8 @@
-const chalk = require('chalk');
-const { runners } = require('../api');
-const { requireAuth } = require('../config');
-const { createSpinner, outputError, outputBox, brand } = require('../output');
-const { resolveRunnerId } = require('./runners-setup');
+import chalk from 'chalk';
+import { runners } from '../api.js';
+import { requireAuth } from '../config.js';
+import { createSpinner, outputError, outputBox, brand } from '../output.js';
+import { resolveRunnerId } from './runners-setup.js';
 
 /**
  * Update runner configuration
@@ -81,4 +81,4 @@ async function markOffline(runnerId, _options) {
   }
 }
 
-module.exports = { update, markOffline };
+export { update, markOffline };

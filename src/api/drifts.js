@@ -1,4 +1,4 @@
-const { getClient } = require('./client');
+import { getClient } from './client.js';
 
 const drifts = {
   async list(params = {}) {
@@ -52,4 +52,4 @@ const drifts = {
   },
 };
 
-module.exports = drifts;
+export default drifts;

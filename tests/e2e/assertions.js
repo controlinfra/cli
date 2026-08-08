@@ -8,7 +8,7 @@
  * Use these helpers instead. They assert on the SPECIFIC markers a healthy
  * command emits, never on bag-of-words alternatives.
  *
- * Naming convention: each helper is `expectXxx` and throws (via jest's
+ * Naming convention: each helper is `expectXxx` and throws (via the runner's
  * `expect`) on the first failed assertion so the failure message points at
  * the line that's wrong.
  */
@@ -149,7 +149,7 @@ function escape(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-module.exports = {
+export {
   expectListOutput,
   expectDetailOutput,
   expectNotFoundError,

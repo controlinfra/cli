@@ -16,7 +16,7 @@
  *           expect(stdout).toMatch(/https:\/\/hooks\.slack\.com/);  // structure
  */
 
-const { runCLI, itAuthenticated } = require('./helpers');
+import { runCLI, itAuthenticated } from './helpers.js';
 
 // ── Slack ────────────────────────────────────────────────────────────
 describe('CLI Slack Commands', () => {

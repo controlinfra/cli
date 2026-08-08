@@ -6,7 +6,7 @@
  * predicate that decides what is safe to replay.
  */
 
-const { isRetryable, retryDelayMs } = require('../../src/api/client');
+import { isRetryable, retryDelayMs } from '../../src/api/client.js';
 
 const err = (over = {}) => ({ config: { method: 'get' }, ...over });
 

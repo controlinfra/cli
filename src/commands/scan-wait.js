@@ -1,7 +1,7 @@
-const chalk = require('chalk');
-const { scans, drifts } = require('../api');
-const { requireAuth, getDriftGateDefaults } = require('../config');
-const {
+import chalk from 'chalk';
+import { scans, drifts } from '../api.js';
+import { requireAuth, getDriftGateDefaults } from '../config.js';
+import {
   brand,
   createSpinner,
   outputError,
@@ -9,8 +9,8 @@ const {
   colorStatus,
   formatRelativeTime,
   formatDuration,
-} = require('../output');
-const { evaluateDriftGate, outputDriftTable } = require('./scan-output');
+} from '../output.js';
+import { evaluateDriftGate, outputDriftTable } from './scan-output.js';
 
 /**
  * Get global JSON output flag from command hierarchy
@@ -219,10 +219,4 @@ async function handleCompletedScan(scanId, scan, options) {
   }
 }
 
-module.exports = {
-  status,
-  wait,
-  waitForScan,
-  resolveScanId,
-  getGlobalJsonFlag,
-};
+export { status, wait, waitForScan, resolveScanId, getGlobalJsonFlag };

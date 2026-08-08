@@ -3,12 +3,17 @@
  * Configures the CLI to use stage server for E2E tests
  */
 
-const path = require('path');
-const fs = require('fs');
-const Conf = require('conf');
+import path from 'path';
+import fs from 'fs';
+import Conf from 'conf';
+import { fileURLToPath } from 'url';
+
+// ESM has no __dirname; Vitest injects one but plain `node` does not, so
+// derive it rather than depend on the runner.
+const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 // Load .env.test if it exists and env vars aren't already set
-const envTestPath = path.join(__dirname, '..', '.env.test');
+const envTestPath = path.join(HERE, '..', '.env.test');
 if (fs.existsSync(envTestPath)) {
   const lines = fs.readFileSync(envTestPath, 'utf8').split('\n');
   for (const line of lines) {

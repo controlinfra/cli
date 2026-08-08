@@ -1,8 +1,8 @@
-const chalk = require('chalk');
-const api = require('../api');
-const { brand } = require('../output');
-const { createSpinner } = require('../output');
-const { gradientBanner } = require('../banner');
+import chalk from 'chalk';
+import * as api from '../api.js';
+import { brand } from '../output.js';
+import { createSpinner } from '../output.js';
+import { gradientBanner } from '../banner.js';
 
 /**
  * Show dashboard after login
@@ -65,4 +65,4 @@ async function showDashboard(user) {
   }
 }
 
-module.exports = { showDashboard };
+export { showDashboard };

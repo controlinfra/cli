@@ -1,7 +1,7 @@
-const chalk = require('chalk');
-const { scans, repos } = require('../api');
-const { requireAuth, getDriftGateDefaults } = require('../config');
-const {
+import chalk from 'chalk';
+import { scans, repos } from '../api.js';
+import { requireAuth, getDriftGateDefaults } from '../config.js';
+import {
   brand,
   createSpinner,
   outputTable,
@@ -10,8 +10,8 @@ const {
   formatRelativeTime,
   formatDuration,
   truncate,
-} = require('../output');
-const { waitForScan, resolveScanId, getGlobalJsonFlag } = require('./scan-wait');
+} from '../output.js';
+import { waitForScan, resolveScanId, getGlobalJsonFlag } from './scan-wait.js';
 
 /**
  * Trigger a new scan
@@ -278,9 +278,4 @@ async function logs(scanId, options) {
   }
 }
 
-module.exports = {
-  run,
-  list,
-  cancel,
-  logs,
-};
+export { run, list, cancel, logs };

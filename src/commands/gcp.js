@@ -1,9 +1,9 @@
-const chalk = require('chalk');
-const inquirer = require('inquirer');
-const { integrations } = require('../api');
-const { requireAuth } = require('../config');
-const { createSpinner, outputError, outputBox, brand } = require('../output');
-const { setup } = require('./gcp-setup');
+import chalk from 'chalk';
+import inquirer from 'inquirer';
+import { integrations } from '../api.js';
+import { requireAuth } from '../config.js';
+import { createSpinner, outputError, outputBox, brand } from '../output.js';
+import { setup } from './gcp-setup.js';
 
 /**
  * Show GCP credentials status
@@ -113,9 +113,4 @@ async function remove(options) {
   }
 }
 
-module.exports = {
-  setup,
-  status,
-  test,
-  remove,
-};
+export { setup, status, test, remove };

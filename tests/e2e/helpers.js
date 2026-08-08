@@ -3,11 +3,16 @@
  * Utilities for running CLI commands and making API calls
  */
 
-const { spawnSync } = require('child_process');
-const path = require('path');
-const axios = require('axios');
+import { spawnSync } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const CLI_PATH = path.join(__dirname, '../../bin/controlinfra.js');
+// ESM has no __dirname; Vitest injects one but plain `node` does not, so
+// derive it rather than depend on the runner.
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+import axios from 'axios';
+
+const CLI_PATH = path.join(HERE, '../../bin/controlinfra.js');
 const API_URL = process.env.CONTROLINFRA_API_URL || 'https://api-stage.controlinfra.com';
 const TEST_TOKEN = process.env.CONTROLINFRA_TEST_TOKEN;
 
@@ -190,7 +195,7 @@ function itAuthenticated(name, fn) {
   }
 }
 
-module.exports = {
+export {
   runCLI,
   apiCall,
   isServerReachable,

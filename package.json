@@ -1,6 +1,7 @@
 {
   "name": "@controlinfra/cli",
-  "version": "0.2.12",
+  "version": "0.3.0",
+  "type": "module",
   "description": "CLI for Controlinfra - Infrastructure Drift Detection",
   "main": "src/index.js",
   "bin": {
@@ -10,24 +11,26 @@
     "start": "node bin/controlinfra.js",
     "dev": "node bin/controlinfra.js",
     "lint": "eslint src",
-    "test": "jest --testPathPatterns=tests/unit",
-    "test:e2e": "jest --testPathPatterns=tests/e2e --runInBand",
-    "test:all": "jest --runInBand",
+    "test": "vitest run --dir tests/unit",
+    "test:e2e": "vitest run --dir tests/e2e",
+    "test:all": "vitest run",
     "build": "npm run build:linux && npm run build:macos && npm run build:windows",
-    "build:linux": "pkg . --targets node18-linux-x64 --output dist/controlinfra-linux",
-    "build:linux-arm": "pkg . --targets node18-linux-arm64 --output dist/controlinfra-linux-arm64",
-    "build:macos": "pkg . --targets node18-macos-x64 --output dist/controlinfra-macos",
-    "build:macos-arm": "pkg . --targets node18-macos-arm64 --output dist/controlinfra-macos-arm64",
-    "build:windows": "pkg . --targets node18-win-x64 --output dist/controlinfra-win.exe",
-    "build:all": "npm run build && npm run build:linux-arm && npm run build:macos-arm"
+    "build:linux": "pkg . --targets node22-linux-x64 --output dist/controlinfra-linux",
+    "build:linux-arm": "pkg . --targets node22-linux-arm64 --output dist/controlinfra-linux-arm64",
+    "build:macos": "pkg . --targets node22-macos-x64 --output dist/controlinfra-macos",
+    "build:macos-arm": "pkg . --targets node22-macos-arm64 --output dist/controlinfra-macos-arm64",
+    "build:windows": "pkg . --targets node22-win-x64 --output dist/controlinfra-win.exe",
+    "build:all": "npm run build && npm run build:linux-arm && npm run build:macos-arm",
+    "test:watch": "vitest --dir tests/unit",
+    "test:coverage": "vitest run --coverage --dir tests/unit"
   },
   "pkg": {
     "scripts": "src/**/*.js",
     "assets": [],
     "targets": [
-      "node18-linux-x64",
-      "node18-macos-x64",
-      "node18-win-x64"
+      "node22-linux-x64",
+      "node22-macos-x64",
+      "node22-win-x64"
     ],
     "outputPath": "dist"
   },
@@ -47,15 +50,14 @@
     "commander": "^11.1.0",
     "conf": "^10.2.0",
     "inquirer": "^8.2.6",
-    "open": "^8.4.2",
     "ora": "^5.4.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@yao-pkg/pkg": "6.19.0",
+    "@yao-pkg/pkg": "6.22.0",
     "eslint": "^10.6.0",
     "globals": "^17.7.0",
-    "jest": "^30.4.2"
+    "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=18.0.0"

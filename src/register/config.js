@@ -1,7 +1,7 @@
-const chalk = require('chalk');
-const { config: cliConfig, setApiUrl, getApiUrl, getConfigPath, reset } = require('../config');
-const { brand } = require('../output');
-const authTokenCommands = require('../commands/auth-tokens');
+import chalk from 'chalk';
+import { config as cliConfig, setApiUrl, getApiUrl, getConfigPath, reset } from '../config.js';
+import { brand } from '../output.js';
+import * as authTokenCommands from '../commands/auth-tokens.js';
 
 function registerConfig(program) {
   const cfg = program.command('config').description('Manage CLI configuration');
@@ -75,4 +75,4 @@ function registerConfig(program) {
     .action(authTokenCommands.revoke);
 }
 
-module.exports = registerConfig;
+export default registerConfig;

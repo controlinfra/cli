@@ -1,15 +1,16 @@
-const chalk = require('chalk');
-const inquirer = require('inquirer');
-const { workspaces } = require('../api');
-const { requireAuth } = require('../config');
-const {
+import chalk from 'chalk';
+import inquirer from 'inquirer';
+import { workspaces } from '../api.js';
+import { requireAuth } from '../config.js';
+import {
   createSpinner,
   outputTable,
   outputError,
   outputBox,
   formatRelativeTime,
   brand,
-} = require('../output');
+} from '../output.js';
+import fs from 'fs';
 
 /**
  * List workspaces
@@ -82,7 +83,6 @@ async function add(name, options) {
       let projectId = options.gcpProjectId, clientEmail = options.gcpClientEmail, privateKey = options.gcpPrivateKey;
       if (options.gcpJsonFile) {
         try {
-          const fs = require('fs');
           const sa = JSON.parse(fs.readFileSync(options.gcpJsonFile, 'utf8'));
           projectId = sa.project_id || projectId;
           clientEmail = sa.client_email || clientEmail;
@@ -279,12 +279,4 @@ async function resolveWorkspaceId(partialId) {
   return null;
 }
 
-module.exports = {
-  list,
-  add,
-  info,
-  update,
-  remove,
-  setDefault,
-  resolveWorkspaceId,
-};
+export { list, add, info, update, remove, setDefault, resolveWorkspaceId };

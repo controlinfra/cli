@@ -2,10 +2,10 @@
  * E2E Tests for Auth Commands — `whoami`, `--version`, `--help`, no-auth state.
  */
 
-const os = require('os');
-const path = require('path');
-const { runCLI, itAuthenticated, API_URL, TEST_TOKEN } = require('./helpers');
-const { expectDetailOutput, expectHelpLists, expectNoBugMarkers } = require('./assertions');
+import os from 'os';
+import path from 'path';
+import { runCLI, itAuthenticated, API_URL, TEST_TOKEN } from './helpers.js';
+import { expectDetailOutput, expectHelpLists, expectNoBugMarkers } from './assertions.js';
 
 describe('CLI Auth Commands', () => {
   describe('whoami', () => {
@@ -19,7 +19,7 @@ describe('CLI Auth Commands', () => {
     });
 
     itAuthenticated('API /api/auth/me returns a user with at least one identifier field', async () => {
-      const axios = require('axios');
+      const axios = await import('axios');
       const response = await axios.get(`${API_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${TEST_TOKEN}` },
       });

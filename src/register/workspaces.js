@@ -1,5 +1,5 @@
-const workspaceCommands = require('../commands/workspaces');
-const workspaceAccessCommands = require('../commands/workspaces-access');
+import * as workspaceCommands from '../commands/workspaces.js';
+import * as workspaceAccessCommands from '../commands/workspaces-access.js';
 
 function registerWorkspaces(program) {
   const ws = program.command('workspaces').description('Manage workspaces');
@@ -72,4 +72,4 @@ function registerWorkspaces(program) {
     .action(workspaceAccessCommands.setVisibility);
 }
 
-module.exports = registerWorkspaces;
+export default registerWorkspaces;

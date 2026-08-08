@@ -1,14 +1,14 @@
-const chalk = require('chalk');
-const http = require('http');
-const { execFile } = require('child_process');
-const inquirer = require('inquirer');
-const api = require('../api');
+import chalk from 'chalk';
+import http from 'http';
+import { execFile } from 'child_process';
+import inquirer from 'inquirer';
+import * as api from '../api.js';
 const { auth } = api;
-const { saveAuth, clearAuth, getUser, isAuthenticated, getApiUrl, getConfigPath } = require('../config');
-const { brand, createSpinner, outputError, outputInfo, outputBox } = require('../output');
-const { canOpenBrowser } = require('../utils/browser-detect');
-const { getSuccessHtml, getErrorHtml } = require('./auth-html');
-const { showDashboard } = require('./auth-dashboard');
+import { saveAuth, clearAuth, getUser, isAuthenticated, getApiUrl, getConfigPath } from '../config.js';
+import { brand, createSpinner, outputError, outputInfo, outputBox } from '../output.js';
+import { canOpenBrowser } from '../utils/browser-detect.js';
+import { getSuccessHtml, getErrorHtml } from './auth-html.js';
+import { showDashboard } from './auth-dashboard.js';
 
 /**
  * Login to Controlinfra
@@ -273,8 +273,4 @@ async function whoami(options, command) {
   }
 }
 
-module.exports = {
-  login,
-  logout,
-  whoami,
-};
+export { login, logout, whoami };

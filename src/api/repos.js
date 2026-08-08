@@ -1,4 +1,4 @@
-const { getClient } = require('./client');
+import { getClient } from './client.js';
 
 const repos = {
   async list(params = {}) {
@@ -37,4 +37,4 @@ const repos = {
   },
 };
 
-module.exports = repos;
+export default repos;

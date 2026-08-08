@@ -1,8 +1,8 @@
-const chalk = require('chalk');
-const inquirer = require('inquirer');
-const { integrations } = require('../api');
-const { requireAuth } = require('../config');
-const { createSpinner, outputError, outputBox, brand } = require('../output');
+import chalk from 'chalk';
+import inquirer from 'inquirer';
+import { integrations } from '../api.js';
+import { requireAuth } from '../config.js';
+import { createSpinner, outputError, outputBox, brand } from '../output.js';
 
 /**
  * Setup Slack integration
@@ -129,9 +129,4 @@ function maskWebhook(url) {
   return url;
 }
 
-module.exports = {
-  setup,
-  test,
-  status,
-  remove,
-};
+export { setup, test, status, remove };

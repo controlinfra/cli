@@ -2,8 +2,8 @@
  * E2E Tests for Runner Commands — `runners list`, help.
  */
 
-const { runCLI, apiCall, itAuthenticated } = require('./helpers');
-const { expectListOutput, expectHelpLists, expectJsonOutput, expectNoBugMarkers } = require('./assertions');
+import { runCLI, apiCall, itAuthenticated } from './helpers.js';
+import { expectListOutput, expectHelpLists, expectJsonOutput, expectNoBugMarkers } from './assertions.js';
 
 describe('CLI Runner Commands', () => {
   describe('runners list', () => {

@@ -1,13 +1,14 @@
-const chalk = require('chalk');
-const { repos } = require('../api');
-const { requireAuth } = require('../config');
-const { createSpinner, outputError, brand } = require('../output');
+import chalk from 'chalk';
+import { repos } from '../api.js';
+import { requireAuth } from '../config.js';
+import { createSpinner, outputError, brand } from '../output.js';
+import fs from 'fs';
 
 /**
  * True when the user supplied any provider-specific cred flag on the
  * command line. Used to distinguish "I want to override the workspace
- * creds for this repo" (build a config block) from "use whatever the
- * workspace already has wired up" (omit the config block entirely so
+ * creds for this repo" (build a config block) from 'use whatever the
+ * workspace already has wired up' (omit the config block entirely so
  * the server falls back to org / CloudAccount creds).
  */
 function hasInlineCreds(cloudProvider, options) {
@@ -136,7 +137,6 @@ function buildGcpConfig(options, runnerType) {
 
   if (options.gcpJsonFile) {
     try {
-      const fs = require('fs');
       const jsonContent = fs.readFileSync(options.gcpJsonFile, 'utf8');
       const sa = JSON.parse(jsonContent);
       projectId = sa.project_id || projectId;
@@ -283,4 +283,4 @@ function parseTfVariables(varsString) {
   return vars;
 }
 
-module.exports = { add };
+export { add };

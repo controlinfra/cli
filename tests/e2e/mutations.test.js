@@ -9,11 +9,11 @@
  * specific marker a healthy command emits.
  */
 
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-const { runCLI, itAuthenticated } = require('./helpers');
-const { expectNoBugMarkers } = require('./assertions');
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import { runCLI, itAuthenticated } from './helpers.js';
+import { expectNoBugMarkers } from './assertions.js';
 
 const FAKE_ID = '000000000000000000000000';
 

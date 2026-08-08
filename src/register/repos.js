@@ -1,6 +1,6 @@
-const repoCommands = require('../commands/repos');
-const repoAddCommand = require('../commands/repos-add');
-const repoUpdateCommand = require('../commands/repos-update');
+import * as repoCommands from '../commands/repos.js';
+import * as repoAddCommand from '../commands/repos-add.js';
+import * as repoUpdateCommand from '../commands/repos-update.js';
 
 function registerRepos(program) {
   const repos = program.command('repos').description('Manage repositories');
@@ -102,4 +102,4 @@ function registerRepos(program) {
     .action(repoCommands.stats);
 }
 
-module.exports = registerRepos;
+export default registerRepos;

@@ -1,4 +1,4 @@
-const authCommands = require('../commands/auth');
+import * as authCommands from '../commands/auth.js';
 
 function registerAuth(program) {
   program
@@ -18,4 +18,4 @@ function registerAuth(program) {
     .action(authCommands.whoami);
 }
 
-module.exports = registerAuth;
+export default registerAuth;

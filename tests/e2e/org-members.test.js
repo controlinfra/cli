@@ -6,10 +6,10 @@
  * bag-of-words regexes.
  */
 
-const { runCLI, itAuthenticated } = require('./helpers');
-const {
+import { runCLI, itAuthenticated } from './helpers.js';
+import {
   expectJsonOutput, expectSuccessOrPermissionError, expectNoBugMarkers,
-} = require('./assertions');
+} from './assertions.js';
 
 describe('Organization member management lifecycle', () => {
   let orgId;

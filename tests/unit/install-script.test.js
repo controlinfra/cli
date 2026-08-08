@@ -1,9 +1,14 @@
 'use strict';
 
-const { execSync } = require('child_process');
-const path = require('path');
+import { execSync } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const INSTALL_SCRIPT = path.join(__dirname, '../../scripts/install.sh');
+// ESM has no __dirname; Vitest injects one but plain `node` does not, so
+// derive it rather than depend on the runner.
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+
+const INSTALL_SCRIPT = path.join(HERE, '../../scripts/install.sh');
 
 // Skip these tests on Windows — the install script is bash-only
 const describeUnix = process.platform === 'win32' ? describe.skip : describe;

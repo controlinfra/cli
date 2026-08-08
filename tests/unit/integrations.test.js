@@ -1,37 +1,51 @@
 'use strict';
 
-jest.mock('../../src/api', () => ({
+vi.mock('../../src/api', async (importOriginal) => ({
+  ...(await importOriginal()),
   integrations: {
-    updateSlack: jest.fn(), testSlack: jest.fn(), getSlack: jest.fn(), deleteSlack: jest.fn(),
-    saveAwsCredentials: jest.fn(), getAwsCredentials: jest.fn(), deleteAwsCredentials: jest.fn(),
-    saveAzureCredentials: jest.fn(), getAzureCredentials: jest.fn(), deleteAzureCredentials: jest.fn(),
-    saveGcpCredentials: jest.fn(), getGcpCredentials: jest.fn(), deleteGcpCredentials: jest.fn(),
-    getAiProvider: jest.fn(), updateAiProvider: jest.fn(),
-    verifyAnthropicKey: jest.fn(), saveAnthropicKey: jest.fn(), deleteAnthropicKey: jest.fn(),
-    verifyOpenaiKey: jest.fn(), saveOpenaiKey: jest.fn(), deleteOpenaiKey: jest.fn(),
+    updateSlack: vi.fn(), testSlack: vi.fn(), getSlack: vi.fn(), deleteSlack: vi.fn(),
+    saveAwsCredentials: vi.fn(), getAwsCredentials: vi.fn(), deleteAwsCredentials: vi.fn(),
+    saveAzureCredentials: vi.fn(), getAzureCredentials: vi.fn(), deleteAzureCredentials: vi.fn(),
+    saveGcpCredentials: vi.fn(), getGcpCredentials: vi.fn(), deleteGcpCredentials: vi.fn(),
+    getAiProvider: vi.fn(), updateAiProvider: vi.fn(),
+    verifyAnthropicKey: vi.fn(), saveAnthropicKey: vi.fn(), deleteAnthropicKey: vi.fn(),
+    verifyOpenaiKey: vi.fn(), saveOpenaiKey: vi.fn(), deleteOpenaiKey: vi.fn(),
   },
 }));
-jest.mock('../../src/config', () => ({ requireAuth: jest.fn(), saveAuth: jest.fn(), getUser: jest.fn(), isAuthenticated: jest.fn() }));
-const mockSpinner = { start: jest.fn().mockReturnThis(), stop: jest.fn(), succeed: jest.fn(), fail: jest.fn(), warn: jest.fn() };
-jest.mock('../../src/output', () => ({
-  brand: { purple: jest.fn((s) => s), purpleBold: jest.fn((s) => s), mid: jest.fn((s) => s), light: jest.fn((s) => s), cyan: jest.fn((s) => s), cyanBold: jest.fn((s) => s), gradient: Array(6).fill(jest.fn((s) => s)) },
-  createSpinner: jest.fn(() => mockSpinner),
-  outputError: jest.fn(), outputInfo: jest.fn(), outputTable: jest.fn(), outputBox: jest.fn(), formatRelativeTime: jest.fn((d) => d),
+vi.mock('../../src/config', async (importOriginal) => ({
+  ...(await importOriginal()), requireAuth: vi.fn(), saveAuth: vi.fn(), getUser: vi.fn(), isAuthenticated: vi.fn() }));
+// vi.mock is hoisted above the file body, so anything its factory
+// references has to be hoisted too — hence vi.hoisted().
+const { mockSpinner } = vi.hoisted(() => ({ mockSpinner: { start: vi.fn().mockReturnThis(), stop: vi.fn(), succeed: vi.fn(), fail: vi.fn(), warn: vi.fn() } }));
+vi.mock('../../src/output', async (importOriginal) => ({
+  ...(await importOriginal()),
+  brand: { purple: vi.fn((s) => s), purpleBold: vi.fn((s) => s), mid: vi.fn((s) => s), light: vi.fn((s) => s), cyan: vi.fn((s) => s), cyanBold: vi.fn((s) => s), gradient: Array(6).fill(vi.fn((s) => s)) },
+  createSpinner: vi.fn(() => mockSpinner),
+  outputError: vi.fn(), outputInfo: vi.fn(), outputTable: vi.fn(), outputBox: vi.fn(), formatRelativeTime: vi.fn((d) => d),
 }));
-jest.mock('inquirer', () => ({ prompt: jest.fn() }));
-jest.mock('fs', () => ({ ...jest.requireActual('fs'), existsSync: jest.fn(), readFileSync: jest.fn() }));
+vi.mock('inquirer', () => ({ default: { prompt: vi.fn() }, prompt: vi.fn() }));
+vi.mock('fs', async () => {
+  const actual = await vi.importActual('fs');
+  const mocked = { ...actual, existsSync: vi.fn(), readFileSync: vi.fn() };
+  // source files do `import fs from 'fs'`, so the default matters
+  return { ...mocked, default: mocked };
+});
 
-const api = require('../../src/api');
-const output = require('../../src/output');
-const inquirer = require('inquirer');
-beforeAll(() => { jest.spyOn(console, 'log').mockImplementation(() => {}); });
+import * as api from '../../src/api.js';
+import * as output from '../../src/output.js';
+import inquirer from 'inquirer';
+import * as slack from '../../src/commands/slack.js';
+import * as aws from '../../src/commands/aws.js';
+import * as azure from '../../src/commands/azure.js';
+import * as gcp from '../../src/commands/gcp.js';
+import * as ai from '../../src/commands/ai.js';
+beforeAll(() => { vi.spyOn(console, 'log').mockImplementation(() => {}); });
 afterAll(() => { console.log.mockRestore(); mockExit.mockRestore(); });
-const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit called'); });
+const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit called'); });
 const jsonCmd = (json) => ({ parent: { parent: { opts: () => ({ json }) } } });
 
 describe('slack', () => {
-  const slack = require('../../src/commands/slack');
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('setup prompts for webhook and saves', async () => {
     inquirer.prompt.mockResolvedValue({ webhook: 'https://hooks.slack.com/T1/B1/x' });
@@ -78,10 +92,9 @@ describe('slack', () => {
 });
 
 describe('aws', () => {
-  const aws = require('../../src/commands/aws');
   const validKey = 'AKIAIOSFODNN7EXAM';
   const validSecret = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY';
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('setup prompts and saves credentials', async () => {
     inquirer.prompt.mockResolvedValue({ accessKey: validKey, secretKey: validSecret, region: 'us-west-2' });
@@ -122,9 +135,8 @@ describe('aws', () => {
 });
 
 describe('azure', () => {
-  const azure = require('../../src/commands/azure');
   const uuid = '12345678-1234-1234-1234-123456789abc';
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('setup saves credentials from options', async () => {
     api.integrations.saveAzureCredentials.mockResolvedValue({});
@@ -167,8 +179,7 @@ describe('azure', () => {
 });
 
 describe('gcp', () => {
-  const gcp = require('../../src/commands/gcp');
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('status shows configured credentials', async () => {
     api.integrations.getGcpCredentials.mockResolvedValue({
@@ -211,8 +222,7 @@ describe('gcp', () => {
 });
 
 describe('ai', () => {
-  const ai = require('../../src/commands/ai');
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('status shows provider info', async () => {
     api.integrations.getAiProvider.mockResolvedValue({ provider: 'anthropic', hasCustomKey: true });

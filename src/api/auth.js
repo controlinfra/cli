@@ -1,4 +1,4 @@
-const { getClient } = require('./client');
+import { getClient } from './client.js';
 
 const auth = {
   async getMe() {
@@ -22,4 +22,4 @@ const auth = {
   },
 };
 
-module.exports = auth;
+export default auth;

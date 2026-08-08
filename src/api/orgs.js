@@ -1,4 +1,4 @@
-const { getClient } = require('./client');
+import { getClient } from './client.js';
 
 const orgs = {
   async list() {
@@ -77,4 +77,4 @@ const orgs = {
   },
 };
 
-module.exports = orgs;
+export default orgs;

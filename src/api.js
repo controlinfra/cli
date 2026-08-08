@@ -3,28 +3,16 @@
  * Individual modules live in ./api/
  */
 
-const { getClient } = require('./api/client');
-const auth = require('./api/auth');
-const repos = require('./api/repos');
-const scans = require('./api/scans');
-const drifts = require('./api/drifts');
-const runners = require('./api/runners');
-const workspaces = require('./api/workspaces');
-const integrations = require('./api/integrations');
-const orgs = require('./api/orgs');
-const projects = require('./api/projects');
-const cliTokens = require('./api/cli-tokens');
+import { getClient } from './api/client.js';
+import auth from './api/auth.js';
+import repos from './api/repos.js';
+import scans from './api/scans.js';
+import drifts from './api/drifts.js';
+import runners from './api/runners.js';
+import workspaces from './api/workspaces.js';
+import integrations from './api/integrations.js';
+import orgs from './api/orgs.js';
+import projects from './api/projects.js';
+import cliTokens from './api/cli-tokens.js';
 
-module.exports = {
-  auth,
-  repos,
-  scans,
-  drifts,
-  runners,
-  workspaces,
-  integrations,
-  orgs,
-  projects,
-  cliTokens,
-  getClient,
-};
+export { auth, repos, scans, drifts, runners, workspaces, integrations, orgs, projects, cliTokens, getClient };

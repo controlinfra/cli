@@ -2,11 +2,11 @@
  * E2E Tests for Drift Commands — `drifts list`, `drifts stats`, help, error paths.
  */
 
-const { runCLI, apiCall, itAuthenticated } = require('./helpers');
-const {
+import { runCLI, apiCall, itAuthenticated } from './helpers.js';
+import {
   expectListOutput, expectHelpLists, expectJsonOutput, expectHelpHasFlags,
   expectNotFoundError, expectNoBugMarkers,
-} = require('./assertions');
+} from './assertions.js';
 
 describe('CLI Drift Commands', () => {
   describe('drifts list', () => {

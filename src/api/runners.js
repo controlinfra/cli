@@ -1,4 +1,4 @@
-const { getClient } = require('./client');
+import { getClient } from './client.js';
 
 const runners = {
   async list() {
@@ -42,4 +42,4 @@ const runners = {
   },
 };
 
-module.exports = runners;
+export default runners;

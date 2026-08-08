@@ -1,8 +1,8 @@
-const chalk = require('chalk');
-const inquirer = require('inquirer');
-const { integrations } = require('../api');
-const { requireAuth } = require('../config');
-const { createSpinner, outputError, outputBox, brand } = require('../output');
+import chalk from 'chalk';
+import inquirer from 'inquirer';
+import { integrations } from '../api.js';
+import { requireAuth } from '../config.js';
+import { createSpinner, outputError, outputBox, brand } from '../output.js';
 
 /**
  * Show current AI provider status
@@ -199,9 +199,4 @@ async function remove(_options) {
   }
 }
 
-module.exports = {
-  status,
-  use,
-  verify,
-  remove,
-};
+export { status, use, verify, remove };

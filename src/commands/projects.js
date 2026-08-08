@@ -1,15 +1,15 @@
-const chalk = require('chalk');
-const inquirer = require('inquirer');
-const { projects } = require('../api');
-const { requireAuth } = require('../config');
-const {
+import chalk from 'chalk';
+import inquirer from 'inquirer';
+import { projects } from '../api.js';
+import { requireAuth } from '../config.js';
+import {
   createSpinner,
   outputTable,
   outputError,
   outputBox,
   brand,
   formatRelativeTime,
-} = require('../output');
+} from '../output.js';
 
 /**
  * List projects
@@ -204,4 +204,4 @@ async function setDefault(id, _options) {
   }
 }
 
-module.exports = { list, create, info, update, deleteProject, setDefault };
+export { list, create, info, update, deleteProject, setDefault };

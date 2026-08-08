@@ -2,11 +2,11 @@
  * E2E Tests for Project Commands — `projects list`, `projects info`, help.
  */
 
-const { runCLI, apiCall, itAuthenticated } = require('./helpers');
-const {
+import { runCLI, apiCall, itAuthenticated } from './helpers.js';
+import {
   expectListOutput, expectHelpLists, expectJsonOutput,
   expectNotFoundError, expectNoBugMarkers,
-} = require('./assertions');
+} from './assertions.js';
 
 describe('CLI Project Commands', () => {
   describe('projects list', () => {

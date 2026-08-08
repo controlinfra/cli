@@ -1,7 +1,7 @@
-const chalk = require('chalk');
-const ora = require('ora');
-const Table = require('cli-table3');
-const { getOutputFormat, isQuiet } = require('./config');
+import chalk from 'chalk';
+import ora from 'ora';
+import Table from 'cli-table3';
+import { getOutputFormat, isQuiet } from './config.js';
 
 // Raw hex values — single source of truth for brand colors
 const brandHex = {
@@ -275,22 +275,4 @@ function outputProgress(current, total, label = '') {
   }
 }
 
-module.exports = {
-  brand,
-  createSpinner,
-  colorStatus,
-  statusColors,
-  createTable,
-  output,
-  outputTable,
-  outputSuccess,
-  outputError,
-  outputWarning,
-  outputInfo,
-  outputBox,
-  outputProgress,
-  formatDate,
-  formatRelativeTime,
-  formatDuration,
-  truncate,
-};
+export { brand, createSpinner, colorStatus, statusColors, createTable, output, outputTable, outputSuccess, outputError, outputWarning, outputInfo, outputBox, outputProgress, formatDate, formatRelativeTime, formatDuration, truncate };

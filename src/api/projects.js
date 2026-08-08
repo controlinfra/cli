@@ -1,4 +1,4 @@
-const { getClient } = require('./client');
+import { getClient } from './client.js';
 
 const projects = {
   async list(params = {}) {
@@ -32,4 +32,4 @@ const projects = {
   },
 };
 
-module.exports = projects;
+export default projects;

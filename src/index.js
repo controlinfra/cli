@@ -1,22 +1,30 @@
-const { Command } = require('commander');
-const chalk = require('chalk');
-const { version } = require('../package.json');
-const { isAuthenticated } = require('./config');
-const api = require('./api');
-const { brand } = require('./output');
-const { gradientBanner } = require('./banner');
+import { Command } from 'commander';
+import chalk from 'chalk';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+// Import assertions for JSON are still behind a flag on the Node versions the
+// binaries target, so read it instead — this also works inside the pkg snapshot.
+const { version } = JSON.parse(
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8'),
+);
+import { isAuthenticated } from './config.js';
+import * as api from './api.js';
+import { brand } from './output.js';
+import { gradientBanner } from './banner.js';
 
 // Import registration modules
-const registerAuth = require('./register/auth');
-const registerRepos = require('./register/repos');
-const registerScan = require('./register/scan');
-const registerDrifts = require('./register/drifts');
-const registerRunners = require('./register/runners');
-const registerWorkspaces = require('./register/workspaces');
-const registerIntegrations = require('./register/integrations');
-const registerOrgs = require('./register/orgs');
-const registerProjects = require('./register/projects');
-const registerConfig = require('./register/config');
+import registerAuth from './register/auth.js';
+import registerRepos from './register/repos.js';
+import registerScan from './register/scan.js';
+import registerDrifts from './register/drifts.js';
+import registerRunners from './register/runners.js';
+import registerWorkspaces from './register/workspaces.js';
+import registerIntegrations from './register/integrations.js';
+import registerOrgs from './register/orgs.js';
+import registerProjects from './register/projects.js';
+import registerConfig from './register/config.js';
 
 const program = new Command();
 
@@ -156,4 +164,4 @@ function showBasicHelp() {
   console.log(`    ${brand.cyan('controlinfra --help')}       ${chalk.dim('View all commands')}`);
 }
 
-module.exports = { program };
+export { program };
