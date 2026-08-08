@@ -1,7 +1,6 @@
 import axios from 'axios';
 import chalk from 'chalk';
-import { getApiUrl, getToken, clearAuth } from '../config.js';
-import { getUser, config as cliConfig } from '../config.js';
+import { getApiUrl, getToken, clearAuth, getUser, config as cliConfig } from '../config.js';
 
 // Network/codes that signal a transient failure where the request likely
 // never produced a server-side effect (connection reset, timeout, DNS blip).
@@ -101,7 +100,7 @@ const createClient = () => {
           // the fallback also 404s.
           const isOrgMissing = /organization not found/i.test(message);
           if (isOrgMissing && !error.config?._orgFallbackTried) {
-                    const user = getUser();
+            const user = getUser();
             const fallbackOrgId = user?.defaultOrgId;
             const currentOrgId = cliConfig.get('orgId');
             if (fallbackOrgId && String(fallbackOrgId) !== String(currentOrgId)) {

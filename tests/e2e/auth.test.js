@@ -4,6 +4,7 @@
 
 import os from 'os';
 import path from 'path';
+import axios from 'axios';
 import { runCLI, itAuthenticated, API_URL, TEST_TOKEN } from './helpers.js';
 import { expectDetailOutput, expectHelpLists, expectNoBugMarkers } from './assertions.js';
 
@@ -19,7 +20,6 @@ describe('CLI Auth Commands', () => {
     });
 
     itAuthenticated('API /api/auth/me returns a user with at least one identifier field', async () => {
-      const axios = await import('axios');
       const response = await axios.get(`${API_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${TEST_TOKEN}` },
       });
