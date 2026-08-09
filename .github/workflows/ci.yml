@@ -13,6 +13,23 @@ on:
 permissions:
   contents: write
 
+env:
+  # An exact version, not '22'. package.json declares engines >=22.12.0, and
+  # setup-node resolves a bare '22' to whatever 22.x the runner toolcache
+  # happens to offer — so the floor we publish and the runtime we actually test
+  # were only accidentally consistent, and a lagging toolcache could select
+  # BELOW it. Without an .npmrc setting engine-strict, npm would not fail on
+  # that: it warns (EBADENGINE) and carries on, so the mismatch would ship
+  # silently.
+  #
+  # This is the floor itself, so CI validates exactly the minimum we claim to
+  # support rather than something above it. The monorepo builds this same CLI on
+  # 22.22.2 (its client/web packages need jsdom 30), so between the two repos the
+  # CLI is exercised at its floor here and above it there.
+  #
+  # .nvmrc carries the same value. Move all three together.
+  NODE_VERSION: '22.12.0'
+
 jobs:
   lint:
     name: Lint
@@ -25,7 +42,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
@@ -46,7 +63,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
@@ -75,7 +92,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
@@ -130,7 +147,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
