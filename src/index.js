@@ -1,15 +1,9 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
-
-// Import assertions for JSON are still behind a flag on the Node versions the
-// binaries target, so read it instead — this also works inside the pkg snapshot.
-const { version } = JSON.parse(
-  readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8'),
-);
+import { getVersion } from './version.js';
 import { isAuthenticated } from './config.js';
+
+const version = getVersion();
 import * as api from './api.js';
 import { brand } from './output.js';
 import { gradientBanner } from './banner.js';
