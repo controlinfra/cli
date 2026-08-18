@@ -1,6 +1,7 @@
 import axios from 'axios';
 import chalk from 'chalk';
 import { getApiUrl, getToken, clearAuth, getUser, config as cliConfig } from '../config.js';
+import { getUserAgent } from '../version.js';
 
 // Network/codes that signal a transient failure where the request likely
 // never produced a server-side effect (connection reset, timeout, DNS blip).
@@ -30,6 +31,9 @@ const createClient = () => {
     timeout: 30000,
     headers: {
       'Content-Type': 'application/json',
+      // Identifies the session in Settings → Active sessions. Without it the
+      // CLI sends axios's default and the row is unrecognisable.
+      'User-Agent': getUserAgent(),
     },
   });
 
